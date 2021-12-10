@@ -10,7 +10,7 @@ from dash_html_components.P import P
 # from Returns_Dashboard import returns_dash
 from dashboard import app
 from dashboard import server
-from apps import rc_dashboard, download_raw_data, mh_dashboard
+from apps import rc_dashboard, download_raw_data, mh_dashboard, orphan_dashboard
 import base64
 import os
 import pandas as pd
@@ -47,7 +47,8 @@ sidebar = html.Div(
         dbc.Nav(
             [
                 dbc.NavLink("Home", href="/", active="exact"),
-                dbc.NavLink("MH Dashboard", href="/apps/mh_dashboard", active="exact"),
+                # dbc.NavLink("MH Dashboard", href="/apps/mh_dashboard", active="exact"),
+                dbc.NavLink("Orphan Dashboard", href="/apps/orphan_dashboard", active="exact"),
                 dbc.NavLink("RC Dashboard", href="/apps/rc_dashboard", active="exact"),
                 dbc.NavLink("Download Data", href="/apps/download_raw_data", active="exact"),
             ],
@@ -72,12 +73,16 @@ content = html.Div(id="page-content", children=[], style=CONTENT_STYLE)
 #     # ],style={'textAlign':'center','margin':'0px'})
 #     html.Div(id='page-content')
 # ], style={'background-color':'#ffffe6', 'height':'100%'})
-mhdf = pd.DataFrame()
+# mhdf = pd.DataFrame()
+rcdf = pd.DataFrame()
+orphandf = pd.DataFrame()
 def layout():
-    global mhdf
+    # global mhdf
     global rcdf
-    mhdf = pd.read_csv(os.getcwd() +'/Dashboard/data/mh_full_data.csv', low_memory=False)
+    global orphandf
+    # mhdf = pd.read_csv(os.getcwd() +'/Dashboard/data/mh_full_data.csv', low_memory=False)
     rcdf = pd.read_csv(os.getcwd() +'/Dashboard/data/rc_full_data.csv', low_memory=False)
+    orphandf = pd.read_csv(os.getcwd() +'/Dashboard/data/orphan_full_data.csv', low_memory=False)
     # print(mhdf.scanned_date.count())
     return html.Div([
             dcc.Location(id="url"),
@@ -95,8 +100,10 @@ app.layout = layout
 def display_page(pathname):
     if pathname == '/apps/rc_dashboard':
         return rc_dashboard.get_layout(rcdf)
-    elif pathname == '/apps/mh_dashboard':
-        return  mh_dashboard.get_layout(mhdf)
+    # elif pathname == '/apps/mh_dashboard':
+    #     return  mh_dashboard.get_layout(mhdf)
+    elif pathname == '/apps/orphan_dashboard':
+        return  orphan_dashboard.get_layout(orphandf,rcdf)
     elif pathname == '/apps/download_raw_data':
         return  download_raw_data.layout
     elif pathname == '/':

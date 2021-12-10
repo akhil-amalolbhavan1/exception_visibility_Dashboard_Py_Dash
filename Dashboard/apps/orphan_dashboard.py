@@ -202,7 +202,7 @@ def update_figures(orphan_start_date, orphan_end_date, date_agg_val):
         xaxis_name = 'Months'
     
     orphan_df_temp = orphan_df[(orphan_df.scanned_date >=orphan_start_date)&(orphan_df.scanned_date<=orphan_end_date)].copy()
-
+    orphan_df_temp = orphan_df_temp[~orphan_df_temp.shipment_category.isin(['Prone to Orphan'])]
     overall_pivot_count, overall_pivot_value, converted_pivot, shipment_type_pivot, orphan_reason_pivot, orphan_area_pivot = func_load_pivots(orphan_df_temp, column_name)
     ageing_rc_pivot = func_load_age_data(orphan_df_temp,rcdf)
 
@@ -216,36 +216,36 @@ def update_figures(orphan_start_date, orphan_end_date, date_agg_val):
     # ageing_fig =  fun_ageing_bar_fig(ageing_pivot)
     ageing_rc_fig = fun_ageing_rc_bar_fig(ageing_rc_pivot)
     
-    # total_count = orphan_df.orphan_scanned_timestamp.count()
-    overal_count_labl = html.H6(["{:,}".format(orphan_df_temp.orphan_scanned_timestamp.count())], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2.5em'}),
+    # total_count = orphan_df.scanned_timestamp.count()
+    overal_count_labl = html.H6(["{:,}".format(orphan_df_temp.scanned_timestamp.count())], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2.5em'}),
     overal_rc_pend_count_labl = [html.H6(["{:,}".format(ageing_rc_pivot.orphan_count.sum())], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2.5em'}),
-                                html.P([str(round(ageing_rc_pivot.orphan_count.sum()/orphan_df_temp.orphan_scanned_timestamp.count()*100,2))+'%'], style={'textAlign':'center', 'color':'red'})]
-    orphan_id_missing_labl = [html.H6(["{:,}".format(orphan_df_temp[(orphan_df_temp.orphan_unique_id.isna())&(orphan_df_temp.shipment_category!='Prone to Orphan')]['orphan_scanned_timestamp'].count())], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2.5em'}),
-                                html.P([str(round(orphan_df_temp[(orphan_df_temp.orphan_unique_id.isna())&(orphan_df_temp.shipment_category!='Prone to Orphan')]['orphan_scanned_timestamp'].count()/orphan_df_temp.orphan_scanned_timestamp.count()*100,2))+'%'], style={'textAlign':'center', 'color':'red'})]
-    orphan_val_labl = [html.H6(["{:,}".format(orphan_df_temp[orphan_df_temp.orphan_unique_id.isna()]['shipment_value'].sum())], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2em'}),
-                                html.P(["{:,}".format(round(orphan_df_temp[~orphan_df_temp.shipment_value.isna()]['orphan_scanned_timestamp'].count(),2))], style={'textAlign':'center', 'color':'red'})]
+                                html.P([str(round(ageing_rc_pivot.orphan_count.sum()/orphan_df_temp.scanned_timestamp.count()*100,2))+'%'], style={'textAlign':'center', 'color':'red'})]
+    orphan_id_missing_labl = [html.H6(["{:,}".format(orphan_df_temp[(orphan_df_temp.orphan_id.isna())&(orphan_df_temp.shipment_category!='Prone to Orphan')]['scanned_timestamp'].count())], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2.5em'}),
+                                html.P([str(round(orphan_df_temp[(orphan_df_temp.orphan_id.isna())&(orphan_df_temp.shipment_category!='Prone to Orphan')]['scanned_timestamp'].count()/orphan_df_temp.scanned_timestamp.count()*100,2))+'%'], style={'textAlign':'center', 'color':'red'})]
+    orphan_val_labl = [html.H6(["{:,}".format(orphan_df_temp[orphan_df_temp.orphan_id.isna()]['shipment_value'].sum())], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2em'}),
+                                html.P(["{:,}".format(round(orphan_df_temp[~orphan_df_temp.shipment_value.isna()]['scanned_timestamp'].count(),2))], style={'textAlign':'center', 'color':'red'})]
 
     return [overall_trend_count_fig, overall_trend_value_fig, converted_perc_fig,  overal_count_labl, ageing_rc_fig,overal_rc_pend_count_labl, orphan_id_missing_labl, orphan_val_labl, shipment_type_bar_fig, orphan_reason_trend_fig, orphan_area_trend_fig]
 
 def func_load_pivots(df, date_agg):
     # print(df[~df.shipment_value.isna()])
-    df['shipment_type']
-    overall_pivot_count = pd.DataFrame(pd.pivot_table(df, index=[date_agg], values=['orphan_scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'orphan_scanned_timestamp': 'orphan_count'})
+    # df['shipment_type']
+    overall_pivot_count = pd.DataFrame(pd.pivot_table(df, index=[date_agg], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
     overall_pivot_value = pd.DataFrame(pd.pivot_table(df, index=[date_agg],fill_value=0, values=['shipment_value'], aggfunc=sum)).reset_index().rename(columns={'shipment_value': 'orphan_count'})
-    shipment_type_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'shipment_type'],fill_value=0, values=['orphan_scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'orphan_scanned_timestamp': 'orphan_count'})
-    orphan_reason_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'orphan_reason'],fill_value=0, values=['orphan_scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'orphan_scanned_timestamp': 'orphan_count'})
-    orphan_area_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'orphan_idnetified_mh_area'],fill_value=0, values=['orphan_scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'orphan_scanned_timestamp': 'orphan_count'})
+    shipment_type_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'shipment_type'],fill_value=0, values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
+    orphan_reason_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'orphan_reason'],fill_value=0, values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
+    orphan_area_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'orphan_idnetified_mh_area'],fill_value=0, values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
     # df['is_tracking_id_available'] = ''
     # df.loc[df.cleared_shipment_tracking_id.isna(), ['is_tracking_id_available']]='No'
     # df.loc[~df.cleared_shipment_tracking_id.isna(), ['is_tracking_id_available']] = 'Yes'
     # print(df['is_tracking_id_available'])
-    df['age']=0
-    df['age'] = (datetime.today().date() - pd.to_datetime(orphan_df['scanned_date']).dt.date)/np.timedelta64(1, 'D')
+    # df['age']=0
+    # df['age'] = (datetime.today().date() - pd.to_datetime(orphan_df['scanned_date']).dt.date)/np.timedelta64(1, 'D')
     # print(df['age'])
-    df['ageing_category'] = df['age'].apply(lambda x: '1st week' if x <= 7 else ('2nd week' if ((x >7) & (x <= 14) ) else ('3rd week') if ((x >14) & (x <= 21) ) else ('4th week' if ((x >21) & (x <= 27) ) else 'Older than 4 weeks')))
+    # df['ageing_category'] = df['age'].apply(lambda x: '1-7' if x <= 7 else ('8-14' if ((x >7) & (x <= 14) ) else ('15-21') if ((x >14) & (x <= 21) ) else ('21-28' if ((x >21) & (x <= 27) ) else 'more than 28')))
     # print(df.is_tracking_id_available.unique())
-    converted_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'is_tracking_id_available'], values=['orphan_scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'orphan_scanned_timestamp': 'orphan_count'})
-    # ageing_pivot = pd.DataFrame(pd.pivot_table(df[df.is_tracking_id_available=='Yes'], index=['ageing_category'], values=['orphan_scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'orphan_scanned_timestamp': 'orphan_count'})
+    converted_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'is_tracking_id_available'], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
+    # ageing_pivot = pd.DataFrame(pd.pivot_table(df[df.is_tracking_id_available=='Yes'], index=['ageing_category'], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
     if date_agg=='month_yr':
         overall_pivot_count = pd.merge(overall_pivot_count, df_sorter, on='month_yr', how='left').sort_values(by='priority')
         overall_pivot_value = pd.merge(overall_pivot_value, df_sorter, on='month_yr', how='left').sort_values(by='priority')
@@ -260,17 +260,19 @@ def func_load_pivots(df, date_agg):
 
 def func_load_age_data(orphan_df1, rcdf):
     orphan_df1 = orphan_df1[orphan_df1['is_tracking_id_available']=='No']
-    print(orphan_df1)
+    # print(orphan_df1)
     # print(rcdf)
-    merged = pd.merge(orphan_df1[~orphan_df1.orphan_unique_id.isna()], rcdf[~rcdf.orphan_id.isna()], left_on='orphan_unique_id', right_on = 'orphan_id', how='left')
+    merged = pd.merge(orphan_df1[~orphan_df1.orphan_id.isna()], rcdf[~rcdf.orphan_id.isna()], left_on='orphan_id', right_on = 'orphan_id', how='left')
     merged['age']=0
     merged['age'] = (datetime.today().date() - pd.to_datetime(merged['scanned_date_x']).dt.date)/np.timedelta64(1, 'D')
-    # print(df['age'])
+    
     if merged.empty:
         ageing_rc_pivot = pd.DataFrame(columns=['ageing_category','orphan_count'])
     else:
         merged['ageing_category'] = merged['age'].apply(lambda x: '1-9 days' if x <= 9 else ('10-16 days' if ((x >9) & (x <= 16) ) else ('17-23') if ((x >16) & (x <= 23) ) else ('24-31' if ((x >23) & (x <= 31) ) else 'Older 31 days')))
-        ageing_rc_pivot = pd.DataFrame(pd.pivot_table(merged[merged.orphan_id.isna()], index=['ageing_category'], values=['orphan_scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'orphan_scanned_timestamp': 'orphan_count'})
+        print(merged)
+        ageing_rc_pivot = pd.DataFrame(pd.pivot_table(merged[~merged.orphan_id.isna()], index=['ageing_category'], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
+    print(ageing_rc_pivot)
     return ageing_rc_pivot
 
 
@@ -339,6 +341,7 @@ def func_overall_trend_val_fig(df, date_agg, tickformat, xasisname):
     return figure
 
 def fun_converted_perc_bar_fig(df, date_agg, tickformat, xasisname):
+    print(df)
     figure = go.Figure({
                          'data':[go.Bar(x = df[(df.is_tracking_id_available=='Yes')&(df[date_agg]==date_val)][date_agg],
                                          y=df[(df.is_tracking_id_available=='Yes')&(df[date_agg]==date_val)].orphan_count/df[df[date_agg]==date_val].orphan_count.sum()*100 ,

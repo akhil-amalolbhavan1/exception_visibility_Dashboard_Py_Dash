@@ -81,10 +81,26 @@ def create_raw_files(df, date_column, csv_files, save_location):
     # print(filenames)
     return filenames
 
-# def coalesce_columns(df, column_a, column_b, result_column):
-#     # print(df[column_a])
-#     df[result_column] = df[column_a].fillna(df[column_b])
-#     return df
+def create_rewrite_raw_files(df, date_column, csv_files, save_location):
+    print('started creating raw files')
+    unique_dates = df[date_column].unique()
+    # print(unique_dates)
+    count = 0
+    filenames = []
+    for scanned_date in unique_dates:
+        # print(scanned_date)
+        scanned_date = scanned_date.strftime("%Y-%m-%d")
+        temp = df[df[date_column]==datetime.strptime(scanned_date,'%Y-%m-%d').date()]
+        filename = scanned_date + '.csv'
+        filenames.append(save_location + filename)
+        temp.to_csv(save_location + filename, index=False)
+        # filenames
+        print('creating raw file for the date ' + filename)
+        count = count + 1
+    print('copmpleted creating %d files ' %count)
+    # print(filenames)
+    return filenames
+
 
 def coalesce_columns(df, coalesce_column_list, result_column):
     # coalesce_column_list = 

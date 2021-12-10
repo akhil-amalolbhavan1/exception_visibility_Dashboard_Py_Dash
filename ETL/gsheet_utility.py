@@ -6,7 +6,7 @@ from datetime import datetime
 
 
 def get_gsheet_data(gsheetUrl, datasclearcell, ghseetdatalocation,asset):
-    gc = pygsheets.authorize(service_file='Client_Secret.json')
+    gc = pygsheets.authorize(service_file='/Users/a/Documents/GitHub/exception_visibility/ETL/Client_Secret.json')
     print(datetime.now().strftime("%m/%d/%Y, %H:%M:%S") + ' Starting Fetching Gsheet Data')
     sh = gc.open_by_url(gsheetUrl)
     ws = sh[0] #Selecting the sheet
