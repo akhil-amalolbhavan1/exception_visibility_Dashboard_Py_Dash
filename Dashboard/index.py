@@ -10,7 +10,7 @@ from dash_html_components.P import P
 # from Returns_Dashboard import returns_dash
 from dashboard import app
 from dashboard import server
-from apps import rc_dashboard, download_raw_data, mh_dashboard, orphan_dashboard
+from apps import rc_dashboard, download_raw_data, orphan_dashboard
 import base64
 import os
 import pandas as pd
@@ -80,9 +80,13 @@ def layout():
     # global mhdf
     global rcdf
     global orphandf
+    global logisticsdf
+    global hvdf
     # mhdf = pd.read_csv(os.getcwd() +'/Dashboard/data/mh_full_data.csv', low_memory=False)
     rcdf = pd.read_csv(os.getcwd() +'/Dashboard/data/rc_full_data.csv', low_memory=False)
     orphandf = pd.read_csv(os.getcwd() +'/Dashboard/data/orphan_full_data.csv', low_memory=False)
+    hvdf = pd.read_csv(os.getcwd() +'/Dashboard/data/hv_orphan_full_data.csv', low_memory=False)
+    logisticsdf = pd.read_csv(os.getcwd() +'/Dashboard/data/logistcs_orphan_full_data.csv', low_memory=False)
     # print(mhdf.scanned_date.count())
     return html.Div([
             dcc.Location(id="url"),
@@ -103,7 +107,7 @@ def display_page(pathname):
     # elif pathname == '/apps/mh_dashboard':
     #     return  mh_dashboard.get_layout(mhdf)
     elif pathname == '/apps/orphan_dashboard':
-        return  orphan_dashboard.get_layout(orphandf,rcdf)
+        return  orphan_dashboard.get_layout(orphandf,rcdf,logisticsdf, hvdf)
     elif pathname == '/apps/download_raw_data':
         return  download_raw_data.layout
     elif pathname == '/':

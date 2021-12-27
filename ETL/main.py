@@ -46,19 +46,17 @@ if __name__ == '__main__':
     hv_orphangsheetdatapath = basePath + 'ETL/gsheet_data/hv_orphan_data/' + today + '.csv'
     logisticsgsheetdatapath = basePath + 'ETL/gsheet_data/logistics_data/' + today + '.csv'
 
+    hub_zone_data = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/187u3lIk3GSDiHuUm-ZLno_keTe-jCAu1bqiTon7ExgU/edit?usp=sharing', 'A3', orphangsheetdatapath,'Hubdetails')
+
     error_message = ''
     html_message = ''
-    html_header = """<html>
-                <head>
-                </head>
-                <body><h2>Data ingestion Summary fo RC</h2>"""
-    html_message = html_message + html_header
+    
     html_message = html_message + "Data Ingestion Job started at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
     run_rc = 0
     run_mh = 0
-    run_orphan = 0
+    run_orphan = 1
     run_high_value = 0
-    run_logistics = 1
+    run_logistics = 0
     #######################################################################################################################################################################
     ###############################################################Starting with RC Exception ####Data Capturing###########################################################
     #######################################################################################################################################################################
@@ -89,7 +87,6 @@ if __name__ == '__main__':
             rcGsheetData = data_processing.coalesce_columns(rcGsheetData, ['damaged_scan_box_id','non_damaged_scan_box_id'], 'scan_box_id')
             rcGsheetData['scanned_date'] = pd.to_datetime(rcGsheetData['rc_received_timestamp']).dt.date
             rcGsheetData = data_processing.fetch_date_details(rcGsheetData, 'rc_received_timestamp', date_master_file)
-            print(rcGsheetData[['scanned_date','weekend','month_year','weeknum']])
             created_raw_files = data_processing.fetch_created_files(rc_raw_data_location)
             filenames = []
             
@@ -121,6 +118,7 @@ if __name__ == '__main__':
     #######################################################################################################################################################################
     ###############################################################Starting with MH Exception Log Data Capturing###########################################################
     #######################################################################################################################################################################
+    error_message=''
     if run_mh==1:
         html_message = html_message + "<h2>Data Ingestion Summary for MH Exception Log Form </h2>"
         try:
@@ -147,7 +145,7 @@ if __name__ == '__main__':
             mhGsheetData = data_processing.coalesce_columns(mhGsheetData, orphan_id_coalesce_list, 'orphan_id')
             mhGsheetData = data_processing.coalesce_columns(mhGsheetData, ['duplicate_shipment_type','orphans_shipment_type'], 'shipment_type')
             mhGsheetData = data_processing.coalesce_columns(mhGsheetData, ['damaged_shipment_image_url','orphan_shipment_image_url'], 'image_url')
-
+            
             mhGsheetData.orphan_id = mhGsheetData.orphan_id.str.upper()
             mhGsheetData.orphan_id = mhGsheetData.orphan_id.apply(lambda x: 'NA' if ((x =='N/A') | (x == 'N\A')) else x)
             mhGsheetData.tracking_id = mhGsheetData.tracking_id.str.upper()
@@ -183,12 +181,13 @@ if __name__ == '__main__':
             error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
             print(error_message)
         if len(error_message)>0:
-            html_message = error_message
+            html_message = html_message + "Error Occured - Data Ingestion Failed for MH <p> Error Message : " + error_message + '<br>' 
         else:
             html_message = html_message + "Data Ingestion Successfull for MH Exception Log form completed at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
 #######################################################################################################################################################################
 ###############################################################Starting with Orphan Data Capturing###########################################################
 #######################################################################################################################################################################
+    error_message=''
     if run_orphan ==1:
         html_message = html_message + "<h2>Data Ingestion Summary for Orphan Form </h2>"
         try:
@@ -199,7 +198,7 @@ if __name__ == '__main__':
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting orphan data process')
             orphanData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1QrfuwxkbDHSrMDREnhicUcA2dPqpZgJqvFQ7f9FHRvU/edit?usp=sharing', 'A3', orphangsheetdatapath,'Orphan')
             orphandbcolumns = ['shipment_value', 'weeknum', 'cleared_shipment_tracking_id', 'month', 'date', 'scanned_timestamp', 'motherhub_name',	'shipment_category', 'orphan_reason', 
-                                'is_invoice_available', 'shipment_type', 'content_details', 'lane_details_semi_large', 'consignment_id_semi_large', 'bag_id',	'orphan_idnetified_mh_area', 'image_url', 
+                                'is_invoice_available', 'shipment_type', 'content_details', 'lane_details_semi_large', 'consignment_id_semi_large', 'bag_id',	'orphan_identified_area', 'image_url', 
                                 'orphan_id', 'bag_seal_id', 'seller_name', 'seller_id', 'seller_type']
             # orphanGsheetColumns = orphanData.columns
             html_message = html_message + "completed fetching orphan raw data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
@@ -215,11 +214,15 @@ if __name__ == '__main__':
             orphanData.loc[orphanData.cleared_shipment_tracking_id.isna(), ['is_tracking_id_available']]='No'
             orphanData.loc[~orphanData.cleared_shipment_tracking_id.isna(), ['is_tracking_id_available']] = 'Yes'
 
+            orphanData.motherhub_name = orphanData.motherhub_name.str.upper()
+            orphanData = pd.merge(orphanData, hub_zone_data, left_on='motherhub_name', right_on='hub_name', how='left')
+
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting to create orphan raw data files')
             html_message = html_message + "Starting to create orphan raw data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
             orphanData['shipment_value'] = orphanData['shipment_value'].str.replace(',', '')
             orphanData['shipment_value'] = orphanData['shipment_value'].str.replace('.0', '')
             orphanData.shipment_value = orphanData.shipment_value.str.replace(' ', '')
+            orphanData.cleared_shipment_tracking_id = orphanData.cleared_shipment_tracking_id.str.replace(r'\r', '')
             orphanData.shipment_value = orphanData.shipment_value.fillna(0)
             orphanData.shipment_value =pd.to_numeric(orphanData.shipment_value)
             orphanData.orphan_id = orphanData.orphan_id.str.upper()
@@ -231,9 +234,9 @@ if __name__ == '__main__':
 
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting to collate data for dashboard')
             html_message = html_message + "Starting to create orphan raw data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
-            orphan_final_columns = ['shipment_value', 'cleared_shipment_tracking_id', 'scanned_timestamp', 'motherhub_name',	'shipment_category', 'orphan_reason', 
-                        'is_invoice_available', 'shipment_type', 'orphan_idnetified_area', 'image_url', 
-                        'orphan_id', 'scanned_date', 'weekend', 'month', 'year', 'month_year','weeknum','is_tracking_id_available']
+            orphan_final_columns = ['shipment_value', 'cleared_shipment_tracking_id', 'scanned_timestamp', 'motherhub_name', 'shipment_category', 'orphan_reason', 
+                        'is_invoice_available', 'shipment_type', 'orphan_identified_area', 'image_url', 
+                        'orphan_id', 'scanned_date', 'weekend', 'month', 'year', 'month_year','weeknum','is_tracking_id_available', 'zone','asset']
             created_raw_files = data_processing.fetch_created_files(orphan_raw_data_location)
             orphan_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, orphan_raw_data_location, orphan_final_columns)
             orphan_dashboard_data.to_csv(basePath + 'Dashboard/data/orphan_full_data.csv', index=False)
@@ -243,13 +246,14 @@ if __name__ == '__main__':
             error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
             print(error_message)
         if len(error_message)>0:
-            html_message = error_message
+            html_message = html_message + "Error Occured - Data Ingestion Failed for Orphan <p> Error Message : " + error_message + '<br>'
         else:
             html_message = html_message + "Data Ingestion Successfull for Orphan form completed at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
 
 #######################################################################################################################################################################
 ###############################################################Starting with High Value Data Capturing###########################################################
 #######################################################################################################################################################################
+    error_message=''
     if run_high_value ==1:
         html_message = html_message + "<h2>Data Ingestion Summary for High Value Orphan Form </h2>"
         try:
@@ -266,7 +270,7 @@ if __name__ == '__main__':
             # orphanGsheetColumns = orphanData.columns
             html_message = html_message + "completed fetching High Value orphan raw data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Fetching High Value orphan data process Completed')
-            hv_orphanData = gsheetUtility.assignDBColumns(hv_orphanData, gsheet_asset='Orphan Data', dbColumns=hv_orphandbcolumns)
+            hv_orphanData = gsheetUtility.assignDBColumns(hv_orphanData, gsheet_asset='HV Orphan Data', dbColumns=hv_orphandbcolumns)
             hv_orphanData = hv_orphanData.drop(columns=['weeknum','month','date'])
             hv_orphanData = data_processing.datatype_conversion(hv_orphanData, 'scanned_timestamp', 'datetime')
             hv_orphanData['scanned_date'] = hv_orphanData['scanned_timestamp'].dt.date
@@ -283,6 +287,7 @@ if __name__ == '__main__':
             hv_orphanData['shipment_value'] = hv_orphanData['shipment_value'].str.replace('.0', '')
             hv_orphanData.shipment_value = hv_orphanData.shipment_value.str.replace(' ', '')
             hv_orphanData.shipment_value = hv_orphanData.shipment_value.fillna(0)
+            hv_orphanData.shipment_value = hv_orphanData[1378:1380].shipment_value.str.replace(r'[^0-9]+', '')
             hv_orphanData.shipment_value =pd.to_numeric(hv_orphanData.shipment_value)
             hv_orphanData.orphan_id = hv_orphanData.orphan_id.str.upper()
             filenames = []
@@ -293,9 +298,9 @@ if __name__ == '__main__':
 
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting to collate data for High Value dashboard')
             html_message = html_message + "Starting to create High Value orphan raw data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
-            orphan_final_columns = ['shipment_value', 'cleared_shipment_tracking_id', 'scanned_timestamp', 'motherhub_name','zone','motherhub_name','shipment_category',
+            orphan_final_columns = ['shipment_value', 'cleared_shipment_tracking_id', 'scanned_timestamp', 'motherhub_name','zone','shipment_category',
                         'orphan_reason','is_invoice_found','received_time','tracking_id','shipment_type','orphan_identified_area',
-                        'orphan_id', 'scanned_date', 'weekend', 'month', 'year', 'month_year','weeknum','is_tracking_id_available']
+                        'orphan_id', 'scanned_date', 'weekend', 'month', 'year', 'month_year','weeknum','is_tracking_id_available','asset']
             created_raw_files = data_processing.fetch_created_files(hv_orphan_raw_data_location)
             orphan_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, hv_orphan_raw_data_location, orphan_final_columns)
             orphan_dashboard_data.to_csv(basePath + 'Dashboard/data/hv_orphan_full_data.csv', index=False)
@@ -304,13 +309,14 @@ if __name__ == '__main__':
             error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
             print(error_message)
         if len(error_message)>0:
-            html_message = error_message
+            html_message = html_message + "<h2>Error Occured - Data Ingestion Failed for High Value <p> Error Message : " + error_message + '</h2><br>'
         else:
             html_message = html_message + "Data Ingestion Successfull for High Value Orphan form completed at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
 
 #######################################################################################################################################################################
 ###############################################################Starting with Logistics Data Capturing###########################################################
 #######################################################################################################################################################################
+    error_message=''
     if run_logistics ==1:
         html_message = html_message + "<h2>Data Ingestion Summary for Logistics Orphan Form </h2>"
         try:
@@ -350,6 +356,10 @@ if __name__ == '__main__':
         except Exception as ex:
             error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
             print(error_message)
+        if len(error_message)>0:
+            html_message = html_message + "<h2>Error Occured - Data Ingestion Failed for Logistics <p> Error Message : " + error_message + '</h2><br>'
+        else:
+            html_message = html_message + "Data Ingestion Successfull for Logistics Orphan form completed at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
     print('sending email')
     # fkEmail.send_mail(rcSPOCS, emailUserName, emailPassword, "Data Ingestion Successfull for RC Input on " + str(date.today().strftime("%d-%m-%Y")), "Data Ingestion Successfully completed at " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"),filenames)
     fkEmail.send_mail(rcSPOCS, emailUserName, emailPassword, "Data Ingestion summary for :" + datetime.now().strftime("%d/%m/%Y"), html_message)

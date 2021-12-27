@@ -120,17 +120,15 @@ def coalesce_columns(df, coalesce_column_list, result_column):
 
 
 def collate_data_for_dashboard(start_date, no_of_days, csv_files, raw_file_location, dataframe_columns):
-    # today = start_date
-    # print(raw_file_location)
-    # tempfile = ''
     df = pd.DataFrame(columns=dataframe_columns) 
+    # df = pd.DataFrame() 
     for i in range(0, no_of_days):
         start_date = start_date - timedelta(1)
         # print(start_date)
         file = start_date.strftime("%Y-%m-%d") + '.csv'
-        # print(file)
+        
         if file in csv_files:
-            # print('file available')
-            # print(file)
-            df = df.append(pd.read_csv(raw_file_location + file))
+            temp = pd.read_csv(raw_file_location + file)
+            temp = temp[dataframe_columns]
+            df = df.append(temp)
     return df
