@@ -29,23 +29,23 @@ import dash_bootstrap_components as dbc
 from dashboard import app
 from datetime import datetime, timedelta
 
-
-orphan_df = pd.read_csv(os.getcwd() +'/Dashboard/data/orphan_full_data.csv', low_memory=False)
-rcdf = pd.read_csv(os.getcwd() +'/Dashboard/data/rc_full_data.csv', low_memory=False)
-logistics_df = pd.read_csv(os.getcwd() +'/Dashboard/data/logistcs_orphan_full_data.csv', low_memory=False)
-hvdf = pd.read_csv(os.getcwd() +'/Dashboard/data/hv_orphan_full_data.csv', low_memory=False)
-datesdf = pd.read_csv(os.getcwd()+'/Dashboard/Data/week_details.csv')
+basepath = '/Users/a/Documents/GitHub/exception_visibility/'
+orphan_df = pd.read_csv(basepath +'/Dashboard/data/orphan_full_data.csv', low_memory=False)
+rcdf = pd.read_csv(basepath +'/Dashboard/data/rc_full_data.csv', low_memory=False)
+logistics_df = pd.read_csv(basepath +'/Dashboard/data/logistcs_orphan_full_data.csv', low_memory=False)
+hvdf = pd.read_csv(basepath +'/Dashboard/data/hv_orphan_full_data.csv', low_memory=False)
+datesdf = pd.read_csv(basepath+'/Dashboard/Data/week_details.csv')
 datesdf.weekday = pd.to_datetime(datesdf.weekday)
 color_code = ['crimson','darkgreen','darkorange','blue','red', 'maroon', 'teal', 'darkblue', 'magenta','yellow','lightgreen']
 # mhdf['month_year'] = ['-'.join(i) for i in zip(mhdf["month"].map(str),mhdf["year"].map(str))]
-orphan_df['month_yr'] = pd.to_datetime(orphan_df['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+orphan_df["year"].map(str)
+orphan_df['month_year'] = pd.to_datetime(orphan_df['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+orphan_df["year"].map(str)
 
 
 dd_date_agg_values = ['Day Wise','Week Wise', 'Month Wise']
 
 cat_order = ['Jan-2021','Feb-2021','Mar-2021','Apr-2021','May-2021','Jun-2021','Jul-2021','Aug-2021','Sep-2021','Oct-2021','Nov-2021','Dec-2021','Jan-2022','Feb-2022','Mar-2022','Apr-2022','May-2022','Jun-2022',
             'Jul-2022','Aug-2022','Sep-2022','Oct-2022','Nov-2022','Dec-2022','Jan-2023','Feb-2023','Mar-2023','Apr-2023','May-2023','Jun-2023','Jul-2023','Aug-2023','Sep-2023','Oct-2023','Nov-2023','Dec-2023']
-df_sorter = pd.DataFrame(data ={ 'month_yr': cat_order,
+df_sorter = pd.DataFrame(data ={ 'month_year': cat_order,
                                 'priority':[1,	2,	3,	4,	5,	6,	7,	8,	9,	10,	11,	12,	13,	14,	15,	16,	17,	18,	19,	20,	21,	22,	23,	24,	25,	26,	27,	28,	29,	30,	31,	32,	33,	34,	35,	36]})
 
 
@@ -55,8 +55,9 @@ def get_layout(df, rc_df, logisticsdf, hv_df):
     orphan_df = df
     hvdf = hv_df
     logistics_df = logisticsdf
-    orphan_df['month_yr'] = pd.to_datetime(orphan_df['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+orphan_df["year"].map(str)
-    logistics_df['month_yr'] = pd.to_datetime(logistics_df['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+logistics_df["year"].map(str)
+    orphan_df['month_year'] = pd.to_datetime(orphan_df['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+orphan_df["year"].map(str)
+    logistics_df['month_year'] = pd.to_datetime(logistics_df['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+logistics_df["year"].map(str)
+    hvdf['month_year'] = pd.to_datetime(hvdf['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+hvdf["year"].map(str)
     layout = html.Div([
                         html.H1('Orphan Dashboard', style={'textAlign':'center', 'width':'100%', 'display':'inline-block'}),
                         html.Br(),html.Br(),
@@ -150,8 +151,8 @@ def get_layout(df, rc_df, logisticsdf, hv_df):
                                 html.Div([], style={'width':'50px', 'float':'left', 'margin':'10px'}),
                                 html.Div([
                                 html.Br(),html.Br(),
-                                html.H5(['Missing Orphan Ids'], style={'color':'#707B7C','width':'100%','textAlign':'center'}),
-                                html.Div(id='missing_orphan_ids',children=[])
+                                html.H5(['Orphan ASP'], style={'color':'#707B7C','width':'100%','textAlign':'center'}),
+                                html.Div(id='orphan_asp',children=[])
                             ], style={'height':'150px', 'width':'150px', 
                                         'backgroundColor':'#F4D03F', 'color':'#707B7C', 
                                         'border': '3px solid #9A7D0A','verticalAlign': 'middle',
@@ -315,7 +316,7 @@ def get_layout(df, rc_df, logisticsdf, hv_df):
                 Output('total_orphans','children'),
                 Output('ageing_rc_bar','figure'),
                 Output('conversion_block', 'children'),
-                Output('missing_orphan_ids','children'),
+                Output('orphan_asp','children'),
                 # Output('orphan_valuation','children'),
                 Output('shipment_type_bar','figure'),
                 Output('orphan_reason_trend','figure'),
@@ -345,7 +346,7 @@ def update_figures(orphan_start_date, orphan_end_date, date_agg_val):
         column_name = 'weeknum'
         xaxis_name = 'Week'
     else:
-        column_name = 'month_yr'
+        column_name = 'month_year'
         tickformat = '%Y-%b'
         xaxis_name = 'Months'
     
@@ -353,11 +354,12 @@ def update_figures(orphan_start_date, orphan_end_date, date_agg_val):
     logistics_df_temp = logistics_df[(logistics_df.scanned_date >=orphan_start_date)&(logistics_df.scanned_date<=orphan_end_date)].copy()
     hv_df_temp = hvdf[(hvdf.scanned_date >=orphan_start_date)&(hvdf.scanned_date<=orphan_end_date)].copy()
     orphan_df_temp = orphan_df_temp[~orphan_df_temp.shipment_category.isin(['Prone to Orphan'])]
-    overall_pivot_count, overall_pivot_value, converted_pivot, shipment_type_pivot, orphan_reason_pivot, hv_converted_pivot, hv_shipment_type_pivot, hv_orphan_reason_pivot = func_load_pivots(orphan_df_temp, hv_df_temp, column_name)
-    
+
     orphan_df_temp['month_year'] = pd.to_datetime(orphan_df_temp.scanned_date).dt.strftime('%b') + '-' + pd.to_datetime(orphan_df_temp.scanned_date).dt.year.astype(str)
     logistics_df_temp['month_year'] = pd.to_datetime(logistics_df_temp.scanned_date).dt.strftime('%b') + '-' + pd.to_datetime(logistics_df_temp.scanned_date).dt.year.astype(str)
     hv_df_temp['month_year'] = pd.to_datetime(hv_df_temp.scanned_date).dt.strftime('%b') + '-' + pd.to_datetime(hv_df_temp.scanned_date).dt.year.astype(str)
+
+    overall_pivot_count, overall_pivot_value, converted_pivot, shipment_type_pivot, orphan_reason_pivot, hv_converted_pivot, hv_shipment_type_pivot, hv_orphan_reason_pivot = func_load_pivots(orphan_df_temp, hv_df_temp, column_name)
 
     # overall_trend_count_fig = func_overall_trend_count_fig(overall_pivot_count, column_name, tickformat, xaxis_name)
     # overall_trend_value_fig = func_overall_trend_val_fig(overall_pivot_value, column_name, tickformat, xaxis_name)
@@ -387,12 +389,14 @@ def update_figures(orphan_start_date, orphan_end_date, date_agg_val):
 
     orphan_id_missing_labl = [html.H6(["{:,}".format(orphan_df_temp[(orphan_df_temp.orphan_id.isna())]['scanned_timestamp'].count())], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2.5em'}),
                                 html.P([str(round(orphan_df_temp[(orphan_df_temp.orphan_id.isna())]['scanned_timestamp'].count()/orphan_df_temp.scanned_timestamp.count()*100,2))+'%'], style={'textAlign':'center', 'color':'red'})]
+    #  [html.H6(["{:,}".format(orphan_df_temp[~(orphan_df_temp.shipment_value.isna())]['shipment_value'].sum())], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2.5em'}),]
+    orphan_asp = [html.P([str(round(orphan_df_temp[~(orphan_df_temp.shipment_value.isna())]['shipment_value'].sum()/orphan_df_temp[~(orphan_df_temp.shipment_value.isna())].scanned_timestamp.count(),2))], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2.5em'})]
     # orphan_val_labl = [html.H6(["{:,}".format(orphan_df_temp[orphan_df_temp.orphan_id.isna()]['shipment_value'].sum())], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2em'}),
     #                             html.P(["{:,}".format(round(orphan_df_temp[~orphan_df_temp.shipment_value.isna()]['scanned_timestamp'].count(),2))], style={'textAlign':'center', 'color':'red'})]
     overall_conversion_count = [html.H6(["{:,}".format(orphan_df_temp[(orphan_df_temp.is_tracking_id_available=='Yes')&(orphan_df_temp.shipment_category=='Orphan (Non-damage)')].is_tracking_id_available.count())], style={'textAlign':'center','width':'100%', 'color':'#1F618D', 'fontSize': '2.5em'}),
                         html.P([str(round(orphan_df_temp[(orphan_df_temp.is_tracking_id_available=='Yes')&(orphan_df_temp.shipment_category=='Orphan (Non-damage)')].is_tracking_id_available.count()/orphan_df_temp[(orphan_df_temp.shipment_category=='Orphan (Non-damage)')].is_tracking_id_available.count()*100,2))+'%'], style={'textAlign':'center', 'color':'red'})]
 
-    return [overall_orphan_data, overall_orphan_column, converted_perc_fig,  overal_count_labl, ageing_rc_fig, overall_conversion_count, orphan_id_missing_labl, shipment_type_bar_fig, orphan_reason_trend_fig, orphan_area_data, orphan_area_column, hv_converted_perc_fig, hv_shipment_type_bar_fig, hv_orphan_reason_trend_fig, hv_orphan_area_data, hv_orphan_area_column]
+    return [overall_orphan_data, overall_orphan_column, converted_perc_fig,  overal_count_labl, ageing_rc_fig, overall_conversion_count, orphan_asp, shipment_type_bar_fig, orphan_reason_trend_fig, orphan_area_data, orphan_area_column, hv_converted_perc_fig, hv_shipment_type_bar_fig, hv_orphan_reason_trend_fig, hv_orphan_area_data, hv_orphan_area_column]
     # return [overall_trend_count_fig, overall_trend_value_fig, converted_perc_fig,  overal_count_labl, ageing_rc_fig,overal_rc_pend_count_labl, orphan_id_missing_labl, orphan_val_labl, shipment_type_bar_fig, orphan_reason_trend_fig, orphan_area_trend_fig]
 
 @app.callback(Output('ageing_mh_zone_bar', 'figure'),
@@ -431,8 +435,9 @@ def update_zone_ageing(click_data, fig, start_date, end_date):
     State('dt_range_orphan','end_date'),
     State('ageing_rc_bar', 'clickData')],
     prevent_initial_call=True)
-def func(click_data, nclicks, fig, start_date, end_date):
+def func(nclicks, fig, start_date, end_date,click_data):
     trace_name=''
+    
     if click_data is None:
         trace_name=='Orphan Data'
     else:
@@ -453,19 +458,18 @@ def func(click_data, nclicks, fig, start_date, end_date):
     return dcc.send_data_frame(merged_df.to_csv, "ageing_data.csv")
 
 def func_load_pivots(df, hv_df, date_agg):
-    # df['shipment_type']
     overall_pivot_count = pd.DataFrame(pd.pivot_table(df, index=[date_agg], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
     overall_pivot_value = pd.DataFrame(pd.pivot_table(df, index=[date_agg],fill_value=0, values=['shipment_value'], aggfunc=sum)).reset_index().rename(columns={'shipment_value': 'orphan_count'})
     shipment_type_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'shipment_type'],fill_value=0, values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
     orphan_reason_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'orphan_reason'],fill_value=0, values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
-    # orphan_area_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'orphan_idnetified_mh_area'],fill_value=0, values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
-  
+    
     converted_pivot = pd.DataFrame(pd.pivot_table(df[(df.shipment_category=='Orphan (Non-damage)')], index=[date_agg,'is_tracking_id_available'], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
     converted_total = pd.DataFrame(pd.pivot_table(df[(df.shipment_category=='Orphan (Non-damage)')], index=[date_agg], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_total'})
     converted_total = pd.merge(converted_pivot,converted_total[[date_agg,'orphan_total']], on=date_agg, how='left')
     converted_total['percentage'] = round(converted_total.orphan_count/converted_total.orphan_total*100,2)
     converted_total = converted_total[converted_total.is_tracking_id_available=='Yes']
-    # ageing_pivot = pd.DataFrame(pd.pivot_table(df[df.is_tracking_id_available=='Yes'], index=['ageing_category'], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
+    
+    
     hv_converted_pivot = pd.DataFrame(pd.pivot_table(hv_df[(hv_df.shipment_category=='Orphan (Non-damage)')], index=[date_agg,'is_tracking_id_available'], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
     hv_converted_total = pd.DataFrame(pd.pivot_table(hv_df[(hv_df.shipment_category=='Orphan (Non-damage)')], index=[date_agg], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_total'})
     hv_converted_total = pd.merge(hv_converted_pivot,hv_converted_total[[date_agg,'orphan_total']], on=date_agg, how='left')
@@ -475,16 +479,16 @@ def func_load_pivots(df, hv_df, date_agg):
     hv_shipment_type_pivot = pd.DataFrame(pd.pivot_table(hv_df, index=[date_agg,'shipment_type'],fill_value=0, values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
     hv_orphan_reason_pivot = pd.DataFrame(pd.pivot_table(hv_df, index=[date_agg,'orphan_reason'],fill_value=0, values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
 
-    if date_agg=='month_yr':
-        overall_pivot_count = pd.merge(overall_pivot_count, df_sorter, on='month_yr', how='left').sort_values(by='priority')
-        overall_pivot_value = pd.merge(overall_pivot_value, df_sorter, on='month_yr', how='left').sort_values(by='priority')
-        converted_total = pd.merge(converted_total, df_sorter, on='month_yr', how='left').sort_values(by='priority')
-        hv_converted_total = pd.merge(converted_total, df_sorter, on='month_yr', how='left').sort_values(by='priority')
-        shipment_type_pivot = pd.merge(shipment_type_pivot, df_sorter, on='month_yr', how='left').sort_values(by='priority')
-        hv_shipment_type_pivot = pd.merge(shipment_type_pivot, df_sorter, on='month_yr', how='left').sort_values(by='priority')
-        orphan_reason_pivot = pd.merge(orphan_reason_pivot, df_sorter, on='month_yr', how='left').sort_values(by='priority')
-        hv_orphan_reason_pivot = pd.merge(orphan_reason_pivot, df_sorter, on='month_yr', how='left').sort_values(by='priority')
-        # orphan_area_pivot = pd.merge(orphan_area_pivot, df_sorter, on='month_yr', how='left').sort_values(by='priority')
+    if date_agg=='month_year':
+        overall_pivot_count = pd.merge(overall_pivot_count, df_sorter, on='month_year', how='left').sort_values(by='priority')
+        overall_pivot_value = pd.merge(overall_pivot_value, df_sorter, on='month_year', how='left').sort_values(by='priority')
+        converted_total = pd.merge(converted_total, df_sorter, on='month_year', how='left').sort_values(by='priority')
+        hv_converted_total = pd.merge(hv_converted_total, df_sorter, on='month_year', how='left').sort_values(by='priority')
+        shipment_type_pivot = pd.merge(shipment_type_pivot, df_sorter, on='month_year', how='left').sort_values(by='priority')
+        hv_shipment_type_pivot = pd.merge(hv_shipment_type_pivot, df_sorter, on='month_year', how='left').sort_values(by='priority')
+        orphan_reason_pivot = pd.merge(orphan_reason_pivot, df_sorter, on='month_year', how='left').sort_values(by='priority')
+        hv_orphan_reason_pivot = pd.merge(hv_orphan_reason_pivot, df_sorter, on='month_year', how='left').sort_values(by='priority')
+        # orphan_area_pivot = pd.merge(orphan_area_pivot, df_sorter, on='month_year', how='left').sort_values(by='priority')
 
     return overall_pivot_count, overall_pivot_value, converted_total, shipment_type_pivot, orphan_reason_pivot, hv_converted_total, hv_shipment_type_pivot, hv_orphan_reason_pivot #orphan_area_pivot #, ageing_pivot
 
@@ -496,9 +500,6 @@ def data_table_pivots(orpdf, hvdf, logisticsdf, date_agg):
     month_year = ['Jan-2021','Feb-2021', 'Mar-2021','Apr-2021','May-2021','Jun-2021','Jul-2021','Aug-2021','Sep-2021','Oct-2021','Nov-2021','Dec-2021',
                     'Jan-2022','Feb-2022', 'Mar-2022','Apr-2022','May-2022','Jun-2022','Jul-2022','Aug-2022','Sep-2022','Oct-2022','Nov-2022','Dec-2022',
                     'Jan-2023','Feb-2023', 'Mar-2023','Apr-2023','May-2023','Jun-2023','Jul-2023','Aug-2023','Sep-2023','Oct-2023','Nov-2023','Dec-2023']
-
-    if date_agg=='month_yr':
-        date_agg='month_year'
 
     mh_identified_area_mapping = pd.DataFrame(columns=['orphan_generated_area', 'orphan_identified_area'], data=[['Inbound Processing','Inbound Staging'],['Inbound Processing','Inbound area'],['Outbound Processing','Outbound Staging'],['Outbound Processing','Outbound area'],['Primary Processing','Primary processing'],['Secondary Processing','Secondary processing'],['3PL','3PL'],['CBS','CBS']])
     orpdf = pd.merge(orpdf,mh_identified_area_mapping, on='orphan_identified_area', how='left')
@@ -534,8 +535,6 @@ def data_table_pivots(orpdf, hvdf, logisticsdf, date_agg):
     return overall_orphans_generated, orphan_area_pivot, hv_orphan_area_pivot
 
 def func_load_age_data(orphan_df1, rcdf, logisticsdf):
-    # ageing_sort = ['1-9 days', '10-16 days', '17-23 days', '24-31 days', 'Older 31 days']
-
     orphan_df1 = orphan_df1[orphan_df1['is_tracking_id_available']=='No']
     merged_orphan = pd.merge(orphan_df1[~orphan_df1.orphan_id.isna()], rcdf[~rcdf.orphan_id.isna()][['orphan_id']], left_on='orphan_id', right_on = 'orphan_id', how='left')
     merged_orphan['age']=0
@@ -674,7 +673,7 @@ def fun_converted_perc_bar_fig(df, date_agg, tickformat, xasisname):
 
 def fun_ageing_bar_fig(df):
     figure = px.bar(df, x='ageing_category', y='orphan_count', text='orphan_count', color='asset', barmode='group',
-                            # orientation='v', #category_orders={'month_yr':cat_order},
+                            # orientation='v', #category_orders={'month_year':cat_order},
                             # template= {'layout':{'paper_bgcolor':'#ffffe6', 'plot_bgcolor':'#aebfd0',
                             #                     'xaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1,},
                             #                     'yaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1,}
@@ -687,7 +686,7 @@ def fun_ageing_bar_fig(df):
 
 def fun_ageing_zone_bar_fig(df, asset):
     figure = px.bar(df, x='ageing_category', y='orphan_count', text='orphan_count',barmode="group", facet_col="zone", color='orphan_count',
-                            orientation='v', #category_orders={'month_yr':cat_order},
+                            orientation='v', #category_orders={'month_year':cat_order},
                             template= {'layout':{'paper_bgcolor':'#ffffe6', 'plot_bgcolor':'#aebfd0',
                                                 'xaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1,},
                                                 'yaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1,}
@@ -700,7 +699,7 @@ def fun_ageing_zone_bar_fig(df, asset):
 
 def fun_ageing_rc_bar_fig(df):
     figure = px.bar(df, x='ageing_category', y='orphan_count', text='orphan_count',color='asset', barmode='group',
-                            orientation='v', #category_orders={'month_yr':cat_order},
+                            orientation='v', #category_orders={'month_year':cat_order},
                             template= {'layout':{'paper_bgcolor':'#ffffe6', 'plot_bgcolor':'#aebfd0',
                                                 'xaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1,},
                                                 'yaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1,}
@@ -713,12 +712,12 @@ def fun_ageing_rc_bar_fig(df):
 
 def func_generate_shiptype_bar_figure(df, date_agg, xasisname):
     figure = px.bar(df, x=date_agg, y='orphan_count', color='shipment_type', 
-                            barmode='group', orientation='v', category_orders={'month_yr':cat_order},
+                            barmode='group', orientation='v', category_orders={'month_year':cat_order},
                             template= {'layout':{'paper_bgcolor':'#ffffe6', 'plot_bgcolor':'#aebfd0',
                                                 'xaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1,},
                                                 'yaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1,}
                                                 }},
-                            labels={'scanned_date' if xasisname=='Scanned Date' else ('weeknum' if xasisname=='Week' else 'month_yr'):xasisname,
+                            labels={'scanned_date' if xasisname=='Scanned Date' else ('weeknum' if xasisname=='Week' else 'month_year'):xasisname,
                                     'orphan_count': 'Orphans Generated',
                                     'shipment_type': 'Shipment Type'},
                                     title="Shipment Type Exception generation")

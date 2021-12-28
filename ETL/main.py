@@ -197,6 +197,7 @@ if __name__ == '__main__':
             
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting orphan data process')
             orphanData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1QrfuwxkbDHSrMDREnhicUcA2dPqpZgJqvFQ7f9FHRvU/edit?usp=sharing', 'A3', orphangsheetdatapath,'Orphan')
+            # orphanData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1r_q9TxtY-VMPbf2XkoQ-7m-shgcUAMRh8QS3K_6DS7s/edit?usp=sharing', 'A3', orphangsheetdatapath,'Orphan')
             orphandbcolumns = ['shipment_value', 'weeknum', 'cleared_shipment_tracking_id', 'month', 'date', 'scanned_timestamp', 'motherhub_name',	'shipment_category', 'orphan_reason', 
                                 'is_invoice_available', 'shipment_type', 'content_details', 'lane_details_semi_large', 'consignment_id_semi_large', 'bag_id',	'orphan_identified_area', 'image_url', 
                                 'orphan_id', 'bag_seal_id', 'seller_name', 'seller_id', 'seller_type']
