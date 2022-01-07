@@ -14,11 +14,11 @@ import os
 from dashboard import app
 # from dashboard import app
 
-
-datesdf = pd.read_csv(os.getcwd()+'/Dashboard/Data/week_details.csv')
+basePath = '/Users/a/Documents/GitHub/exception_visibility/'
+datesdf = pd.read_csv(basePath + 'Dashboard/Data/week_details.csv')
 datesdf.weekday = pd.to_datetime(datesdf.weekday)
 
-ddformvalues = ['RC Data', 'MH Data']
+ddformvalues = ['RC Data', 'MH Orphan Data', 'MH HV Orphan Data', 'Logistics Orphan Data']
 
 dbc.Row(dbc.Col(
             dbc.Spinner(children=[dcc.Graph(id="loading-output")], size="lg", color="primary", type="border", fullscreen=True,),
@@ -128,47 +128,43 @@ app.clientside_callback(
 def fun_datatable_column_data(form_value, start_date, end_date):
     #print(df.count())
     # df_DC = df[((df[rejection_column] != "0") & (df[rejection_column] != "CP"))]
+    rc_raw_data_location = basePath + 'ETL/RC_Raw_Data/'
+    # mh_raw_data_location = basePath + 'ETL/MH_Raw_Data/'
+    orphan_raw_data_location = basePath + 'ETL/Orphan_Raw_Data/'
+    hv_orphan_raw_data_location = basePath + 'ETL/HV_Orphan_Raw_Data/'
+    logistics_raw_data_location = basePath + 'ETL/Logistics_Raw_Data/'
     df = pd.DataFrame()
     if form_value=='RC Data':
-        df = pd.read_csv(os.getcwd() +'/Dashboard/data/rc_full_data.csv')
-    elif form_value == 'MH Data':
-        df = pd.read_csv(os.getcwd() +'/Dashboard/data/mh_full_data.csv')
-    df['scanned_date'] = pd.to_datetime(df['scanned_date'])
-    df =df[(df.scanned_date >= start_date) & (df.scanned_date <= end_date)]
-    # print(df)
-    #print(rejection_column)
-    df1 = pd.DataFrame()
-    # if df['DC'].count()!=0:
-    #     df1 = pd.crosstab(index=[df.scanned_date],
-    #                                         columns=[df_DC[df_DC.quality=='Q2'][rejection_column]],
-    #                                         values=df_DC[df_DC.quality=='Q2'].return_id,
-    #                                         aggfunc=sum,
-    #                                         dropna=False).fillna(0).reset_index()
-
-    #     df1['Total'] = df1.sum(axis=1)
-    #     df1 = df1.sort_values(by='Total', ascending=False).reset_index()
-    #     df1 = df1.drop(columns=['index'])
-    # else:
-    #     df1 = pd.DataFrame.from_dict({'DC':[0],'Q2': ['No Q2']})
+        df = collate_data(start_date, end_date, rc_raw_data_location)
+        # df = pd.read_csv(os.getcwd() +'/Dashboard/data/rc_full_data.csv')
+    elif form_value == 'MH Orphan Data':
+        df = collate_data(start_date, end_date, orphan_raw_data_location)
+        # df = pd.read_csv(os.getcwd() +'/Dashboard/data/orphan_full_data.csv')
+    elif form_value == 'MH HV Orphan Data':
+        df = collate_data(start_date, end_date, hv_orphan_raw_data_location)
+        # df = pd.read_csv(os.getcwd() +'/Dashboard/data/hv_orphan_full_data.csv')
+    elif form_value == 'Logistics Orphan Data':
+        df = collate_data(start_date, end_date, logistics_raw_data_location)
+        # df = pd.read_csv(os.getcwd() +'/Dashboard/data/logistcs_orphan_full_data.csv')
     dc_column = [{"name": i, "id": i} for i in df.columns]
     # dc_column = df.columns.to_list()
     dc_data = df.to_dict('records')
-    # print(dc_data)
-    # print(df.columns)
     return dc_data, dc_column
 
-# def collate_data_for_dashboard(start_date, end_date, csv_files, raw_file_location, dataframe_columns):
-#     # today = start_date
-#     # print(raw_file_location)
-#     tempfile = ''
-#     df = pd.DataFrame(columns=dataframe_columns) 
-
-#     for i in range(0, no_of_days):
-#         start_date = start_date - timedelta(1)
-#         # print(start_date)
-#         file = start_date.strftime("%Y-%m-%d") + '.csv'
-#         # print(file)
-#         if file in csv_files:
-#             # print(file)
-#             df = df.append(pd.read_csv(raw_file_location + file))
-#     return df
+def collate_data(start_date, end_date, location):
+    all_files = os.listdir(location)
+    print(all_files)
+    csv_files = list(filter(lambda f: f.endswith('.csv'), all_files))
+    # csv_files = 
+    tempfile = ''
+    start_date = pd.to_datetime(start_date).date()
+    end_date = pd.to_datetime(end_date).date()
+    no_of_days = (end_date - start_date).days
+    df = pd.DataFrame() 
+    print(no_of_days)
+    for i in range(0, no_of_days):
+        start_date = start_date - timedelta(1)
+        file = start_date.strftime("%Y-%m-%d") + '.csv'
+        if file in csv_files:
+            df = df.append(pd.read_csv(location + file))
+    return df
