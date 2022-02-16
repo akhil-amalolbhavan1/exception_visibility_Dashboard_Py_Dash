@@ -5,12 +5,9 @@ import dash_bootstrap_components as dbc
 from dash_html_components.Div import Div
 from dash_html_components.H1 import H1
 from dash_html_components.P import P
-# from dash_html_components.Div import Div
-
-# from Returns_Dashboard import returns_dash
 from dashboard import app
 from dashboard import server
-from apps import rc_dashboard, download_raw_data, orphan_dashboard
+from apps import rc_dashboard, download_raw_data, orphan_dashboard, spf_pv_dashboard
 import base64
 import os
 import pandas as pd
@@ -50,6 +47,7 @@ sidebar = html.Div(
                 # dbc.NavLink("MH Dashboard", href="/apps/mh_dashboard", active="exact"),
                 dbc.NavLink("Orphan Dashboard", href="/apps/orphan_dashboard", active="exact"),
                 dbc.NavLink("RC Dashboard", href="/apps/rc_dashboard", active="exact"),
+                dbc.NavLink("SPF & PV", href="/apps/spf_pv", active="exact"),
                 dbc.NavLink("Download Data", href="/apps/download_raw_data", active="exact"),
             ],
             vertical=True,
@@ -61,19 +59,6 @@ sidebar = html.Div(
 
 content = html.Div(id="page-content", children=[], style=CONTENT_STYLE)
 
-
-# app.layout = html.Div([
-#                 html.Div([
-#                     html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()), height=75, width=250, style={'float':'left', 'margin': '0px auto'}),
-#                         html.H1('Exception Visibility', style={'float':'none', 'color':'#005ce6','font-size': '3em', 'left':'-100px','position':'relative', 'top':'0px', 'margin': '0px auto', 'textAlign':'center', 'width':'100%', })
-#                         ], style={'width':'100%', 'height':'100px'}),
-#     dcc.Location(id='url', refresh=False),
-#     # html.Div(id='master-page',children=[
-#     #         html.Div(id='page-content')
-#     # ],style={'textAlign':'center','margin':'0px'})
-#     html.Div(id='page-content')
-# ], style={'background-color':'#ffffe6', 'height':'100%'})
-# mhdf = pd.DataFrame()
 rcdf = pd.DataFrame()
 orphandf = pd.DataFrame()
 def layout():
@@ -82,11 +67,16 @@ def layout():
     global orphandf
     global logisticsdf
     global hvdf
+    global pvdf
+    global spfdf
     # mhdf = pd.read_csv(os.getcwd() +'/Dashboard/data/mh_full_data.csv', low_memory=False)
-    rcdf = pd.read_csv(os.getcwd() +'/Dashboard/data/rc_full_data.csv', low_memory=False)
-    orphandf = pd.read_csv(os.getcwd() +'/Dashboard/data/orphan_full_data.csv', low_memory=False)
-    hvdf = pd.read_csv(os.getcwd() +'/Dashboard/data/hv_orphan_full_data.csv', low_memory=False)
-    logisticsdf = pd.read_csv(os.getcwd() +'/Dashboard/data/logistcs_orphan_full_data.csv', low_memory=False)
+    basepath = '/Users/a/Documents/GitHub/exception_visibility/'
+    rcdf = pd.read_csv(basepath + '/Dashboard/data/rc_full_data.csv', low_memory=False)
+    orphandf = pd.read_csv(basepath +'/Dashboard/data/orphan_full_data.csv', low_memory=False)
+    hvdf = pd.read_csv(basepath +'/Dashboard/data/hv_orphan_full_data.csv', low_memory=False)
+    logisticsdf = pd.read_csv(basepath +'/Dashboard/data/logistcs_orphan_full_data.csv', low_memory=False)
+    pvdf = pd.read_csv(basepath +'/Dashboard/data/pv_full_data.csv', low_memory=False)
+    spfdf = pd.read_csv(basepath +'/Dashboard/data/spf_full_data.csv', low_memory=False)
     # print(mhdf.scanned_date.count())
     return html.Div([
             dcc.Location(id="url"),
@@ -108,6 +98,8 @@ def display_page(pathname):
     #     return  mh_dashboard.get_layout(mhdf)
     elif pathname == '/apps/orphan_dashboard':
         return  orphan_dashboard.get_layout(orphandf,rcdf,logisticsdf, hvdf)
+    elif pathname == '/apps/spf_pv':
+        return  spf_pv_dashboard.get_layout(pvdf, spfdf)
     elif pathname == '/apps/download_raw_data':
         return  download_raw_data.layout
     elif pathname == '/':
