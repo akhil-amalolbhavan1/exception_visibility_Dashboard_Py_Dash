@@ -24,7 +24,7 @@ if __name__ == '__main__':
     ####################################### RC Data Processing #####################################
     ################################################################################################
     emailUserName = 'akhil.a@flipkart.com'
-    emailPassword = 'prieuyhpifoqyefr'
+    emailPassword = 'tllwlpuyjuhvdjug'
     rcSPOCS = "akhil.a@flipkart.com"
     
     date_master_file = pd.read_csv( '/Users/a/Documents/GitHub/exception_visibility/Dashboard/data/week_details.csv')
@@ -36,6 +36,10 @@ if __name__ == '__main__':
     orphan_raw_data_location = basePath + 'ETL/Orphan_Raw_Data/'
     hv_orphan_raw_data_location = basePath + 'ETL/HV_Orphan_Raw_Data/'
     logistics_raw_data_location = basePath + 'ETL/Logistics_Raw_Data/'
+    spf_raw_data_location = basePath + 'ETL/SPF_Raw_Data/'
+    pv_raw_data_location = basePath + 'ETL/PV_Raw_Data/'
+    audit_raw_data_location = basePath + 'ETL/Audit_Raw_Data/'
+    
 
     today = date.today()
     today = str(today.year) + "-" + str('{:02d}'.format(today.month)) + "-" + str('{:02d}'.format(today.day))
@@ -45,8 +49,11 @@ if __name__ == '__main__':
     orphangsheetdatapath = basePath + 'ETL/gsheet_data/orphan_data/' + today + '.csv'
     hv_orphangsheetdatapath = basePath + 'ETL/gsheet_data/hv_orphan_data/' + today + '.csv'
     logisticsgsheetdatapath = basePath + 'ETL/gsheet_data/logistics_data/' + today + '.csv'
+    spfsheetdatapath = basePath + 'ETL/gsheet_data/spf_data/' + today + '.csv'
+    pvsheetdatapath = basePath + 'ETL/gsheet_data/pv_data/' + today + '.csv'
+    auditsheetdatapath = basePath + 'ETL/gsheet_data/audit_data/' + today + '.csv'
 
-    hub_zone_data = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/187u3lIk3GSDiHuUm-ZLno_keTe-jCAu1bqiTon7ExgU/edit?usp=sharing', 'A3', orphangsheetdatapath,'Hubdetails')
+    hub_zone_data = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/187u3lIk3GSDiHuUm-ZLno_keTe-jCAu1bqiTon7ExgU/edit?usp=sharing', 'A3', orphangsheetdatapath,'Hubdetails',0)
 
     error_message = ''
     html_message = ''
@@ -54,9 +61,12 @@ if __name__ == '__main__':
     html_message = html_message + "Data Ingestion Job started at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
     run_rc = 0
     run_mh = 0
-    run_orphan = 1
+    run_orphan = 0
     run_high_value = 0
     run_logistics = 0
+    run_pv = 1
+    run_spf = 1
+    run_audit = 1
     #######################################################################################################################################################################
     ###############################################################Starting with RC Exception ####Data Capturing###########################################################
     #######################################################################################################################################################################
@@ -64,7 +74,7 @@ if __name__ == '__main__':
         try:    
             html_message = html_message + "Data Ingestion Job for RC started at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting RC data process')
-            rcData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1kCMwH7tq2RoiugdoDKe3xFYMgp_P4WvidwMtG3tNAUo/edit?usp=sharing', 'A3', rcgsheetdatapath,'RC')
+            rcData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1kCMwH7tq2RoiugdoDKe3xFYMgp_P4WvidwMtG3tNAUo/edit?usp=sharing', 'A3', rcgsheetdatapath,'RC',0)
             rcGsheetData = rcData.iloc[0:,0:19].copy()
             rcDBColumns = ['rc_received_timestamp','received_by','rc_name','orphan_id','orphan_id_condition','fsn_identified_warehouse','wsn_id','final_area_rc','business_unit',
                             'supercategory','expiry_date','product_title','packaging_condition','damaged_physical_segregation','damaged_quantity','damaged_scan_box_id',
@@ -103,7 +113,7 @@ if __name__ == '__main__':
                                 'fsn_identified_warehouse', 'wsn_id', 'final_area_rc', 'business_unit', 'supercategory', 'expiry_date', 
                                 'product_title', 'packaging_condition', 'asset', 'physical_segregation', 'quantity', 'scan_box_id', 'scanned_date', 
                                 'weekend', 'month', 'year','month_year','weeknum']
-            rc_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, rc_raw_data_location, rc_final_columns)
+            rc_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, rc_raw_data_location, rc_final_columns, 'date')
             rc_dashboard_data.to_csv(basePath + 'Dashboard/data/rc_full_data.csv', index=False)
 
         except Exception as ex:
@@ -124,7 +134,7 @@ if __name__ == '__main__':
         try:
             html_message = html_message + "Data Ingestion Job for MH Exception Log form started at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting MH data process')
-            mhGsheetData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1aeODc4c7bxvYs0iI1eJ2nbHTExLCEkA77D5C9X3sxQg/edit?resourcekey#gid=793332736', 'A2', mhgsheetdatapath, 'MH')
+            mhGsheetData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1aeODc4c7bxvYs0iI1eJ2nbHTExLCEkA77D5C9X3sxQg/edit?resourcekey#gid=793332736', 'A2', mhgsheetdatapath, 'MH',0)
             # rcData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1g4n416j5xGvgwV7KnDHpEPyN1mrsGgH5durMXT2hxHU/edit?usp=sharing','A3')
             # mhGsheetData = mhData.copy()
             mhDBColumns = ['exception_log_timestamp', 'scanned_by',	'asset_type', 'exception_type',	'dg_offload_tracking_id', 'dg_offload_is_rto', 'suspected_malicious_tracking_id',
@@ -161,7 +171,7 @@ if __name__ == '__main__':
             scanned_dates = mhGsheetData.exception_log_timestamp.unique()
             created_raw_files = data_processing.fetch_created_files(mh_raw_data_location)
             filenames = []
-            mhzonedata = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/187u3lIk3GSDiHuUm-ZLno_keTe-jCAu1bqiTon7ExgU/edit?usp=sharing', 'A2', mhgsheetdatapath, 'MH')
+            mhzonedata = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/187u3lIk3GSDiHuUm-ZLno_keTe-jCAu1bqiTon7ExgU/edit?usp=sharing', 'A2', mhgsheetdatapath, 'MH',0)
             mhGsheetData = pd.merge(mhGsheetData, mhzonedata, left_on='scanned_asset', right_on='Asset_Name', how='left')
             print('Starting creating MH Exception Log form raw files')
             filenames = data_processing.create_raw_files(mhGsheetData,'scanned_date',created_raw_files, mh_raw_data_location )
@@ -174,7 +184,7 @@ if __name__ == '__main__':
                                 'orphan_id', 'shipment_type', 'shipment_image_url', 'orphan_shipment_category', 'orphan_reason', 'orphan_is_invoice_available',
                                 'orphans_super_category', 'zone','is_marketplace', 'orphan_shipment_image_url', 'scanned_date', 'weekend', 'month', 'year', 'month_year','weeknum']
 
-            mh_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, mh_raw_data_location, mh_final_columns)
+            mh_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, mh_raw_data_location, mh_final_columns, 'date')
             mh_dashboard_data.to_csv(basePath + 'Dashboard/data/mh_full_data.csv', index=False)
 
         except Exception as ex:
@@ -192,19 +202,19 @@ if __name__ == '__main__':
         html_message = html_message + "<h2>Data Ingestion Summary for Orphan Form </h2>"
         try:
             html_message = html_message + "Data Ingestion Job for Orphan form started at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
-            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting MH data process')
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting Orphan data process')
             html_message = html_message + "Starting to fetch orphan raw data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
             
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting orphan data process')
-            orphanData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1QrfuwxkbDHSrMDREnhicUcA2dPqpZgJqvFQ7f9FHRvU/edit?usp=sharing', 'A3', orphangsheetdatapath,'Orphan')
-            # orphanData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1r_q9TxtY-VMPbf2XkoQ-7m-shgcUAMRh8QS3K_6DS7s/edit?usp=sharing', 'A3', orphangsheetdatapath,'Orphan')
+            # orphanData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1QrfuwxkbDHSrMDREnhicUcA2dPqpZgJqvFQ7f9FHRvU/edit?usp=sharing', 'A3', orphangsheetdatapath,'Orphan')
+            orphanData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1r_q9TxtY-VMPbf2XkoQ-7m-shgcUAMRh8QS3K_6DS7s/edit?usp=sharing', 'A3', orphangsheetdatapath,'Orphan',0)
             orphandbcolumns = ['shipment_value', 'weeknum', 'cleared_shipment_tracking_id', 'month', 'date', 'scanned_timestamp', 'motherhub_name',	'shipment_category', 'orphan_reason', 
                                 'is_invoice_available', 'shipment_type', 'content_details', 'lane_details_semi_large', 'consignment_id_semi_large', 'bag_id',	'orphan_identified_area', 'image_url', 
                                 'orphan_id', 'bag_seal_id', 'seller_name', 'seller_id', 'seller_type']
             # orphanGsheetColumns = orphanData.columns
             html_message = html_message + "completed fetching orphan raw data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Fetching orphan data process Completed')
-            orphanData = gsheetUtility.assignDBColumns(orphanData, gsheet_asset='Orphan Data', dbColumns=orphandbcolumns)
+            orphanData = gsheetUtility.assignDBColumns(orphanData, gsheet_asset='MH Orphan Data', dbColumns=orphandbcolumns)
             orphanData = orphanData.drop(columns=['weeknum','month','date'])
             orphanData = data_processing.datatype_conversion(orphanData, 'scanned_timestamp', 'datetime')
             orphanData['scanned_date'] = orphanData['scanned_timestamp'].dt.date
@@ -239,7 +249,7 @@ if __name__ == '__main__':
                         'is_invoice_available', 'shipment_type', 'orphan_identified_area', 'image_url', 
                         'orphan_id', 'scanned_date', 'weekend', 'month', 'year', 'month_year','weeknum','is_tracking_id_available', 'zone','asset']
             created_raw_files = data_processing.fetch_created_files(orphan_raw_data_location)
-            orphan_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, orphan_raw_data_location, orphan_final_columns)
+            orphan_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, orphan_raw_data_location, orphan_final_columns, 'date')
             orphan_dashboard_data.to_csv(basePath + 'Dashboard/data/orphan_full_data.csv', index=False)
 
 
@@ -263,7 +273,7 @@ if __name__ == '__main__':
             html_message = html_message + "Starting to fetch High Value orphan raw data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
             
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting High Value orphan data process')
-            hv_orphanData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1_lqYbhqhqSuGSxgJoAPYBcBnRtmly91rIznQDqhKKzE/edit?usp=sharing', 'A3', hv_orphangsheetdatapath,'MH High Value Orphans')
+            hv_orphanData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1_lqYbhqhqSuGSxgJoAPYBcBnRtmly91rIznQDqhKKzE/edit?usp=sharing', 'A3', hv_orphangsheetdatapath,'MH High Value Orphans',0)
             hv_orphandbcolumns = ['pv_status','destination_area','cleared_shipment_tracking_id','shipment_value','weeknum','month','date','scanned_timestamp',
                                 'zone','motherhub_name','shift_name','shipment_category','no_of_units','orphan_reason','is_invoice_found','received_time','tracking_id','shipment_type','content_details',
                                 'lane_details','trip_id','bag_id','orphan_identified_area','orphan_photograph_link','orphan_id','bag_seal_id','brand_name','product_id','price','model',
@@ -303,7 +313,7 @@ if __name__ == '__main__':
                         'orphan_reason','is_invoice_found','received_time','tracking_id','shipment_type','orphan_identified_area',
                         'orphan_id', 'scanned_date', 'weekend', 'month', 'year', 'month_year','weeknum','is_tracking_id_available','asset']
             created_raw_files = data_processing.fetch_created_files(hv_orphan_raw_data_location)
-            orphan_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, hv_orphan_raw_data_location, orphan_final_columns)
+            orphan_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, hv_orphan_raw_data_location, orphan_final_columns, 'date')
             orphan_dashboard_data.to_csv(basePath + 'Dashboard/data/hv_orphan_full_data.csv', index=False)
 
         except Exception as ex:
@@ -323,7 +333,7 @@ if __name__ == '__main__':
         try:
             html_message = html_message + "Data Ingestion Job for Logistics started at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
             print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting Logistics data process')
-            logisticsData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1beqaUyvM7gb8qVnl9sQdQokzKtuftfulAmqmr72IxI0/edit?usp=sharing', 'A2', logisticsgsheetdatapath,'logistics')
+            logisticsData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1beqaUyvM7gb8qVnl9sQdQokzKtuftfulAmqmr72IxI0/edit?usp=sharing', 'A2', logisticsgsheetdatapath,'logistics',0)
 
             logisticsdbcolumns = ['scanned_timestamp','email_address','zone','asset','hub_name','orphan_type','orphan_id','super_category','product_title','product_value','motherhub_name']
             html_message = html_message + "completed fetching Logistics orphan raw data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
@@ -351,7 +361,7 @@ if __name__ == '__main__':
             logistics_final_columns = ['scanned_timestamp','email_address','zone','asset','hub_name','orphan_type','orphan_id','super_category','product_title','product_value', 
                                     'scanned_date', 'weekend', 'month', 'year', 'month_year','weeknum']
             created_raw_files = data_processing.fetch_created_files(logistics_raw_data_location)
-            logistics_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, logistics_raw_data_location, logistics_final_columns)
+            logistics_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, logistics_raw_data_location, logistics_final_columns, 'date')
             logistics_dashboard_data.to_csv(basePath + 'Dashboard/data/logistcs_orphan_full_data.csv', index=False)
             html_message = html_message + "Completed collating Logistics orphan raw data files for dashboard at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
         except Exception as ex:
@@ -361,6 +371,206 @@ if __name__ == '__main__':
             html_message = html_message + "<h2>Error Occured - Data Ingestion Failed for Logistics <p> Error Message : " + error_message + '</h2><br>'
         else:
             html_message = html_message + "Data Ingestion Successfull for Logistics Orphan form completed at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+#######################################################################################################################################################################
+###############################################################Starting with PV Data Capturing#########################################################################
+#######################################################################################################################################################################   
+    error_message=''
+    if run_pv == 1:
+        html_message = html_message + "<h2>Data Ingestion Summary for PV Data </h2>"
+        try:
+            html_message = html_message + "Data Ingestion Job for PV data form started at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting pv data process')
+            html_message = html_message + "Starting to fetch PV data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting pv data process')
+            pvData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1jsroohFh1uoPqw-6jCcDztEUYAgukZGwFP0YeKgvhH0/edit?usp=sharing', 'A2', pvsheetdatapath,'PV',0)
+            pv_columns = ['sl_no','month','scanned_timestamp','shipment_id','motherhub_name','reason']
+            html_message = html_message + "completed fetching pv data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Fetching pv data process Completed')
+            pvData = gsheetUtility.assignDBColumns(pvData, gsheet_asset='PV Data', dbColumns=pv_columns)
+
+            pvData = data_processing.datatype_conversion(pvData, 'scanned_timestamp', 'datetime')
+            # spfData['scanned_date'] = spfData['scanned_timestamp'].dt.date
+            # spfData = data_processing.fetch_date_details(spfData, 'scanned_timestamp', date_master_file)
+
+            pvData.shipment_id = pvData.shipment_id.replace(r'^\s*$', np.NaN, regex=True)
+            pvData['is_tracking_id_available'] = ''
+            pvData.loc[pvData.shipment_id.isna(), ['is_tracking_id_available']]='No'
+            pvData.loc[~pvData.shipment_id.isna(), ['is_tracking_id_available']] = 'Yes'
+
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting to create pv data files')
+            html_message = html_message + "Starting to create pv data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            pvData['shipment_id'] = pvData['shipment_id'].str.replace(',', '')
+            # spfData['shipment_id'] = spfData['shipment_id'].str.replace('.0', '')
+            pvData.shipment_id = pvData.shipment_id.str.replace(' ', '')
+            pvData.shipment_id = pvData.shipment_id.fillna(0)
+            # spfData.shipment_id = spfData[1378:1380].shipment_id.str.replace(r'[^0-9]+', '')
+            # spfData.shipment_id =pd.to_numeric(spfData.shipment_id)
+            pvData.shipment_id = pvData.shipment_id.str.upper()
+
+            pvData.motherhub_name = pvData.motherhub_name.str.upper()
+            pvData = pd.merge(pvData, hub_zone_data, left_on='motherhub_name', right_on='hub_name', how='left')
+
+            filenames = []
+            created_raw_files = data_processing.fetch_created_files(pv_raw_data_location)
+            filenames = data_processing.create_rewrite_raw_files(pvData,'month', created_raw_files, pv_raw_data_location )
+            html_message = html_message + "Completed creating pv data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Completed creating pv raw data files')
+
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting to collate data for pv dashboard')
+            # html_message = html_message + "Starting to create spf raw data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            pv_final_columns = ['sl_no','month','scanned_timestamp','shipment_id','motherhub_name','reason', 'is_tracking_id_available', 'zone','asset']
+            created_raw_files = data_processing.fetch_created_files(pv_raw_data_location)
+            pv_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, pv_raw_data_location, pv_final_columns,'month')
+            pv_dashboard_data.to_csv(basePath + 'Dashboard/data/pv_full_data.csv', index=False)
+        except Exception as ex:
+                error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
+                print(error_message)
+        if len(error_message)>0:
+            html_message = html_message + "<h2>Error Occured - Data Ingestion Failed for pv <p> Error Message : " + error_message + '</h2><br>'
+        else:
+            html_message = html_message + "Data Ingestion Successfull for PV Data form completed at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+#######################################################################################################################################################################
+###############################################################Starting with SPF Data Capturing#########################################################################
+#######################################################################################################################################################################   
+    error_message = ''
+    if run_spf == 1:
+        html_message = html_message + "<h2>Data Ingestion Summary for SPF Data Form </h2>"
+        try:
+            html_message = html_message + "Data Ingestion Job for spf data form started at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting spf data process')
+            html_message = html_message + "Starting to fetch spf data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting spf data process')
+            spfData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1jsroohFh1uoPqw-6jCcDztEUYAgukZGwFP0YeKgvhH0/edit?usp=sharing', 'A2', spfsheetdatapath,'spf',1)
+            spf_columns = ['sl_no','month','scanned_timestamp','shipment_id','motherhub_name','reason']
+            html_message = html_message + "completed fetching spf data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Fetching spf data process Completed')
+            spfData = gsheetUtility.assignDBColumns(spfData, gsheet_asset='SPF Data', dbColumns=spf_columns)
+
+            spfData = data_processing.datatype_conversion(spfData, 'scanned_timestamp', 'datetime')
+            # spfData['scanned_date'] = spfData['scanned_timestamp'].dt.date
+            # spfData = data_processing.fetch_date_details(spfData, 'scanned_timestamp', date_master_file)
+
+            spfData.shipment_id = spfData.shipment_id.replace(r'^\s*$', np.NaN, regex=True)
+            spfData['is_tracking_id_available'] = ''
+            spfData.loc[spfData.shipment_id.isna(), ['is_tracking_id_available']]='No'
+            spfData.loc[~spfData.shipment_id.isna(), ['is_tracking_id_available']] = 'Yes'
+
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting to create orphan raw data files')
+            html_message = html_message + "Starting to create spf data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            spfData['shipment_id'] = spfData['shipment_id'].str.replace(',', '')
+            # spfData['shipment_id'] = spfData['shipment_id'].str.replace('.0', '')
+            spfData.shipment_id = spfData.shipment_id.str.replace(' ', '')
+            spfData.shipment_id = spfData.shipment_id.fillna(0)
+            # spfData.shipment_id = spfData[1378:1380].shipment_id.str.replace(r'[^0-9]+', '')
+            # spfData.shipment_id =pd.to_numeric(spfData.shipment_id)
+            spfData.shipment_id = spfData.shipment_id.str.upper()
+
+            spfData.motherhub_name = spfData.motherhub_name.str.upper()
+            spfData = pd.merge(spfData, hub_zone_data, left_on='motherhub_name', right_on='hub_name', how='left')
+
+            filenames = []
+            created_raw_files = data_processing.fetch_created_files(spf_raw_data_location)
+            filenames = data_processing.create_rewrite_raw_files(spfData,'month', created_raw_files, spf_raw_data_location )
+            html_message = html_message + "Completed creating spf data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Completed creating spf raw data files')
+
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting to collate data for SPF dashboard')
+            # html_message = html_message + "Starting to create spf raw data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            spf_final_columns = ['sl_no','month','scanned_timestamp','shipment_id','motherhub_name','reason', 'is_tracking_id_available', 'zone','asset']
+            created_raw_files = data_processing.fetch_created_files(spf_raw_data_location)
+            spf_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, spf_raw_data_location, spf_final_columns,'month')
+            spf_dashboard_data = data_processing.dashboard_data_pivot(spf_dashboard_data, pivot_indexes=['month','motherhub_name','is_tracking_id_available','zone','asset'], value_calc_column = 'shipment_id', rename_column_to = 'count', aggregation_func = len)
+            spf_dashboard_data.to_csv(basePath + 'Dashboard/data/spf_full_data.csv', index=False)
+        except Exception as ex:
+                error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
+                print(error_message)
+        if len(error_message)>0:
+            html_message = html_message + "<h2>Error Occured - Data Ingestion Failed for SPF <p> Error Message : " + error_message + '</h2><br>'
+        else:
+            html_message = html_message + "Data Ingestion Successfull for SPF Data form completed at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+
+#######################################################################################################################################################################
+###############################################################Starting with Audit Data Capturing#########################################################################
+#######################################################################################################################################################################   
+    error_message = ''
+    if run_audit == 1:
+        html_message = html_message + "<h2>Data Ingestion Summary for Audit Data Form </h2>"
+        try:
+            html_message = html_message + "Data Ingestion Job for audit data form started at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting audit data process')
+            html_message = html_message + "Starting to fetch audit data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting audit data process')
+            auditData = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1jsroohFh1uoPqw-6jCcDztEUYAgukZGwFP0YeKgvhH0/edit?usp=sharing', 'A2', pvsheetdatapath,'Audit',2)
+            audit_columns = ['sl_no','month','scanned_timestamp','motherhub_name','qc_name','shipment_id','product_details','colour','image','brand','size','mrp','remarks','ok_count','not_ok_count','result']
+            html_message = html_message + "completed fetching audit data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Fetching audit data process Completed')
+            auditData = gsheetUtility.assignDBColumns(auditData, gsheet_asset='Audit Data', dbColumns=audit_columns)
+            auditData.drop(columns=['month'], inplace=True)
+            auditData = data_processing.datatype_conversion(auditData, 'scanned_timestamp', 'datetime')
+            auditData['scanned_date'] = auditData['scanned_timestamp'].dt.date
+            auditData = data_processing.fetch_date_details(auditData, 'scanned_date', date_master_file)
+
+            auditData.shipment_id = auditData.shipment_id.replace(r'^\s*$', np.NaN, regex=True)
+            auditData['is_tracking_id_available'] = ''
+            auditData.loc[auditData.shipment_id.isna(), ['is_tracking_id_available']]='No'
+            auditData.loc[~auditData.shipment_id.isna(), ['is_tracking_id_available']] = 'Yes'
+
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting to create audit data files')
+            html_message = html_message + "Starting to create audit data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            auditData['shipment_id'] = auditData['shipment_id'].str.replace(',', '')
+            # spfData['shipment_id'] = spfData['shipment_id'].str.replace('.0', '')
+            auditData.shipment_id = auditData.shipment_id.str.replace(' ', '')
+            auditData.shipment_id = auditData.shipment_id.fillna(0)
+            # spfData.shipment_id = spfData[1378:1380].shipment_id.str.replace(r'[^0-9]+', '')
+            # spfData.shipment_id =pd.to_numeric(spfData.shipment_id)
+            auditData.shipment_id = auditData.shipment_id.str.upper()
+
+            auditData.motherhub_name = auditData.motherhub_name.str.upper()
+            auditData = pd.merge(auditData, hub_zone_data, left_on='motherhub_name', right_on='hub_name', how='left')
+
+            auditData.colour= auditData.colour.replace(r'^\s*$', np.NaN, regex=True)
+            auditData.colour.fillna('NA', inplace=True)
+            auditData.image= auditData.image.replace(r'^\s*$', np.NaN, regex=True)
+            auditData.image.fillna('NA', inplace=True)
+            auditData.brand= auditData.brand.replace(r'^\s*$', np.NaN, regex=True)
+            auditData.brand.fillna('NA', inplace=True)
+            auditData.mrp= auditData.mrp.replace(r'^\s*$', np.NaN, regex=True)
+            auditData.mrp.fillna('NA', inplace=True)
+            for column in ['colour','image', 'brand', 'size','mrp']:
+                auditData[column] = auditData[column].str.upper()
+            auditData['ok_count'] = auditData[['colour','image', 'brand', 'size','mrp']].apply(lambda x: (1 if (x['colour']=='OK' or x['colour']=='NA') else 0 )+ (1 if (x['image']=='OK' or x['image']=='NA') else 0) +
+                                                                            (1 if (x['brand']=='OK' or x['brand']=='NA') else 0 ) + (1 if (x['size']=='OK'  or x['size']=='NA') else 0) + 
+                                                                            (1 if (x['mrp']=='OK'  or x['mrp']=='NA') else 0), axis=1)
+            auditData['not_ok_count'] = auditData[['colour','image', 'brand', 'size','mrp']].apply(lambda x: (1 if x['colour']=='NOT OK' else 0 )+ (1 if x['image']=='NOT OK' else 0) +
+                                                                            (1 if x['brand']=='NOT OK' else 0 ) + (1 if x['size']=='NOT OK' else 0) + + (1 if x['mrp']=='NOT OK' else 0), axis=1)
+            auditData['result'] = auditData[['ok_count', 'not_ok_count',]].apply(lambda x: 'Pass' if x['ok_count'] / (x['ok_count'] + x['not_ok_count']) ==1 else 'Fail', axis =1)
+            
+            filenames = []
+            created_raw_files = data_processing.fetch_created_files(audit_raw_data_location)
+            filenames = data_processing.create_rewrite_raw_files(auditData,'scanned_date', created_raw_files, audit_raw_data_location )
+            html_message = html_message + "Completed creating pv data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Completed creating audit raw data files')
+
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting to collate data for audit dashboard')
+            # html_message = html_message + "Starting to create spf raw data files at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            audit_final_columns = ['sl_no', 'scanned_timestamp', 'motherhub_name','zone', 'qc_name', 'shipment_id', 'product_details', 'colour', 'image', 'brand', 'size',
+                                'mrp', 'remarks', 'ok_count', 'not_ok_count', 'result', 'asset','scanned_date', 'weekend', 'month', 'year', 'month_year', 'weeknum',
+                                'is_tracking_id_available' ]
+            created_raw_files = data_processing.fetch_created_files(audit_raw_data_location)
+            audit_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, audit_raw_data_location, audit_final_columns,'date')
+            audit_dashboard_data = data_processing.dashboard_data_pivot(audit_dashboard_data, pivot_indexes=['scanned_date','month', 'year', 'motherhub_name', 'zone', 'is_tracking_id_available', 'asset','result'], value_calc_column = 'shipment_id', rename_column_to = 'count', aggregation_func = len)
+            audit_dashboard_data.to_csv(basePath + 'Dashboard/data/audit_full_data.csv', index=False)
+        except Exception as ex:
+                error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
+                print(error_message)
+        if len(error_message)>0:
+            html_message = html_message + "<h2>Error Occured - Data Ingestion Failed for audit data <p> Error Message : " + error_message + '</h2><br>'
+        else:
+            html_message = html_message + "Data Ingestion Successfull for Audit Data form completed at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            
     print('sending email')
     # fkEmail.send_mail(rcSPOCS, emailUserName, emailPassword, "Data Ingestion Successfull for RC Input on " + str(date.today().strftime("%d-%m-%Y")), "Data Ingestion Successfully completed at " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"),filenames)
     fkEmail.send_mail(rcSPOCS, emailUserName, emailPassword, "Data Ingestion summary for :" + datetime.now().strftime("%d/%m/%Y"), html_message)

@@ -25,46 +25,46 @@ from dashboard import app
 
 mhdf = pd.read_csv(os.getcwd() +'/Dashboard/data/mh_full_data.csv', low_memory=False)
 # mhdf['month_year'] = ['-'.join(i) for i in zip(mhdf["month"].map(str),mhdf["year"].map(str))]
-mhdf['month_yr'] = pd.to_datetime(mhdf['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+mhdf["year"].map(str)
+mhdf['month_year'] = pd.to_datetime(mhdf['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+mhdf["year"].map(str)
 mhdf.zone = mhdf.zone.fillna('NA')
 # mhdf['month_year'] = pd.to_datetime(mhdf['month_year']).dt.date.astype(str)
 
 
 color_code = ['crimson','darkgreen','darkorange','blue','red', 'maroon', 'teal', 'darkblue', 'magenta','yellow','lightgreen']
 # print(mhdf.columns)
-overall_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_yr'], values=['exception_log_timestamp'], aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
-zone_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_yr','zone'], values=['exception_log_timestamp'], fill_value='NA', aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
-zone_hub_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_yr','zone','hub_name'], values=['exception_log_timestamp'], fill_value='NA', aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
+overall_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_year'], values=['exception_log_timestamp'], aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
+zone_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_year','zone'], values=['exception_log_timestamp'], fill_value='NA', aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
+zone_hub_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_year','zone','hub_name'], values=['exception_log_timestamp'], fill_value='NA', aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
 # print(zone_pivot)
 
 
 # def func_load_data(mhdf):
-#     mhdf['month_yr'] = pd.to_datetime(mhdf['month_year']).dt.month_name().str.slice(stop=3)+"-"+mhdf["year"].map(str)
+#     mhdf['month_year'] = pd.to_datetime(mhdf['month_year']).dt.month_name().str.slice(stop=3)+"-"+mhdf["year"].map(str)
 #     mhdf.zone = mhdf.zone.fillna('NA')
 #     mhdf['month_year'] = pd.to_datetime(mhdf['month_year']).dt.date.astype(str)
-#     overall_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_yr'], values=['exception_log_timestamp'], aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
-#     zone_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_yr','zone'], values=['exception_log_timestamp'], fill_value='NA', aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
-#     zone_hub_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_yr','zone','hub_name'], values=['exception_log_timestamp'], fill_value='NA', aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
+#     overall_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_year'], values=['exception_log_timestamp'], aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
+#     zone_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_year','zone'], values=['exception_log_timestamp'], fill_value='NA', aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
+#     zone_hub_pivot = pd.DataFrame(pd.pivot_table(mhdf, index=['month_year','zone','hub_name'], values=['exception_log_timestamp'], fill_value='NA', aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
 #     cat_order = ['Jan-2021','Feb-2021','Mar-2021','Apr-2021','May-2021','Jun-2021','Jul-2021','Aug-2021','Sep-2021','Oct-2021','Nov-2021','Dec-2021','Jan-2022','Feb-2022','Mar-2022','Apr-2022','May-2022','Jun-2022',
 #             'Jul-2022','Aug-2022','Sep-2022','Oct-2022','Nov-2022','Dec-2022','Jan-2023','Feb-2023','Mar-2023','Apr-2023','May-2023','Jun-2023','Jul-2023','Aug-2023','Sep-2023','Oct-2023','Nov-2023','Dec-2023']
-#     df_sorter = pd.DataFrame(data ={ 'month_yr': cat_order,
+#     df_sorter = pd.DataFrame(data ={ 'month_year': cat_order,
 #                                 'priority':[1,	2,	3,	4,	5,	6,	7,	8,	9,	10,	11,	12,	13,	14,	15,	16,	17,	18,	19,	20,	21,	22,	23,	24,	25,	26,	27,	28,	29,	30,	31,	32,	33,	34,	35,	36]})
-#     overall_pivot = pd.merge(overall_pivot,df_sorter,on='month_yr', how='left').sort_values(by='priority')
-#     zone_hub_pivot = pd.merge(zone_hub_pivot,df_sorter,on='month_yr', how='left').sort_values(by='priority')
+#     overall_pivot = pd.merge(overall_pivot,df_sorter,on='month_year', how='left').sort_values(by='priority')
+#     zone_hub_pivot = pd.merge(zone_hub_pivot,df_sorter,on='month_year', how='left').sort_values(by='priority')
 #     return overall_pivot, zone_pivot, zone_hub_pivot
 
 
 
 cat_order = ['Jan-2021','Feb-2021','Mar-2021','Apr-2021','May-2021','Jun-2021','Jul-2021','Aug-2021','Sep-2021','Oct-2021','Nov-2021','Dec-2021','Jan-2022','Feb-2022','Mar-2022','Apr-2022','May-2022','Jun-2022',
             'Jul-2022','Aug-2022','Sep-2022','Oct-2022','Nov-2022','Dec-2022','Jan-2023','Feb-2023','Mar-2023','Apr-2023','May-2023','Jun-2023','Jul-2023','Aug-2023','Sep-2023','Oct-2023','Nov-2023','Dec-2023']
-df_sorter = pd.DataFrame(data ={ 'month_yr': cat_order,
+df_sorter = pd.DataFrame(data ={ 'month_year': cat_order,
                                 'priority':[1,	2,	3,	4,	5,	6,	7,	8,	9,	10,	11,	12,	13,	14,	15,	16,	17,	18,	19,	20,	21,	22,	23,	24,	25,	26,	27,	28,	29,	30,	31,	32,	33,	34,	35,	36]})
 
 date_column_name = ''
-overall_pivot.month_yr = overall_pivot.month_yr.astype('category')
-overall_pivot.month_yr.cat.set_categories(cat_order, inplace=True)
-overall_pivot = pd.merge(overall_pivot,df_sorter,on='month_yr', how='left').sort_values(by='priority')
-zone_hub_pivot = pd.merge(zone_hub_pivot,df_sorter,on='month_yr', how='left').sort_values(by='priority')
+overall_pivot.month_year = overall_pivot.month_year.astype('category')
+overall_pivot.month_year.cat.set_categories(cat_order, inplace=True)
+overall_pivot = pd.merge(overall_pivot,df_sorter,on='month_year', how='left').sort_values(by='priority')
+zone_hub_pivot = pd.merge(zone_hub_pivot,df_sorter,on='month_year', how='left').sort_values(by='priority')
 # print(overall_pivot)
 dd_mh_name = mhdf.hub_name.unique().tolist()
 dd_mh_name.append('All')
@@ -85,7 +85,7 @@ dd_date_agg_values = ['Day Wise','Week Wise', 'Month Wise']
 def get_layout(df):
     global mhdf
     mhdf = df
-    mhdf['month_yr'] = pd.to_datetime(mhdf['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+mhdf["year"].map(str)
+    mhdf['month_year'] = pd.to_datetime(mhdf['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+mhdf["year"].map(str)
     mhdf.zone = mhdf.zone.fillna('NA')
     # layout = html.Div([dcc.Store(id='full_data', data=mhdf.to_json(date_format='iso', orient='split')),
     #             html.Div(id="onload"),
@@ -111,7 +111,7 @@ def get_layout(df):
                 dcc.Graph(id='hubwise_bubble',
                 figure = go.Figure(),
             #     figure = px.scatter(zone_hub_pivot, 
-            #                         x='month_yr', 
+            #                         x='month_year', 
             #                         y="orphan_count", 
             #                         color="hub_name", 
             #                         facet_col='zone',
@@ -121,7 +121,7 @@ def get_layout(df):
             #                                             'yaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1, 'fixedrange':True},
             #                                                 }},
             #  title="Zone-Hub wise MoM Exceptions",
-            #  labels={"month_yr":"Months",
+            #  labels={"month_year":"Months",
             #         "orphan_count":"Exceptions Generated",
             #         "hub_name":'Hubs'} # customize label,
             
@@ -178,7 +178,7 @@ def update_exception_graph(dd_mhname_value,dd_date_agg_value, ):
         column_name = 'weeknum'
         xaxis_name = 'Week'
     else:
-        column_name = 'month_yr'
+        column_name = 'month_year'
         tickformat = '%Y-%b'
         xaxis_name = 'Months'
     if dd_mhname_value=='All':
@@ -217,7 +217,7 @@ def update_figure_dateagg(dd_date_agg_value):
         column_name = 'weeknum'
         xaxis_name = 'Week'
     else:
-        column_name = 'month_yr'
+        column_name = 'month_year'
         tickformat = '%Y-%b'
         xaxis_name = 'Months'
     # print(column_name) 
@@ -236,9 +236,9 @@ def func_generate_pivots(df, date_agg_column):
     zone_hub_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg_column,'zone','hub_name'], values=['exception_log_timestamp'], fill_value='NA', aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
     # exception_type_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg_column,'exception_type'], values=['exception_log_timestamp'], aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
 
-    if date_agg_column=='month_yr':
-        overall_pivot = pd.merge(overall_pivot,df_sorter,on='month_yr', how='left').sort_values(by='priority')
-        zone_hub_pivot = pd.merge(zone_hub_pivot,df_sorter,on='month_yr', how='left').sort_values(by='priority')
+    if date_agg_column=='month_year':
+        overall_pivot = pd.merge(overall_pivot,df_sorter,on='month_year', how='left').sort_values(by='priority')
+        zone_hub_pivot = pd.merge(zone_hub_pivot,df_sorter,on='month_year', how='left').sort_values(by='priority')
         
     return overall_pivot, zone_pivot, zone_hub_pivot
 
@@ -246,9 +246,9 @@ def generate_pivots(df, date_agg):
     # print('insdie exception pivot')
     # print(date_agg)
     exception_type_pivot = pd.DataFrame(pd.pivot_table(df, index=[date_agg,'exception_type'], values=['exception_log_timestamp'], aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
-    if date_agg=='month_yr':
-        exception_type_pivot = pd.merge(exception_type_pivot,df_sorter,on='month_yr', how='left').sort_values(by='priority')
-    # hub_pivot = pd.DataFrame(pd.pivot_table(df, index=['month_yr','exception_type'], values=['exception_log_timestamp'], aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
+    if date_agg=='month_year':
+        exception_type_pivot = pd.merge(exception_type_pivot,df_sorter,on='month_year', how='left').sort_values(by='priority')
+    # hub_pivot = pd.DataFrame(pd.pivot_table(df, index=['month_year','exception_type'], values=['exception_log_timestamp'], aggfunc=len)).reset_index().rename(columns={'exception_log_timestamp': 'orphan_count'})
     return exception_type_pivot
 
 def func_generate_overal_trend_figure(df, date_agg, tickformat, xasisname):
@@ -285,12 +285,12 @@ def func_generate_overal_trend_figure(df, date_agg, tickformat, xasisname):
 
 def func_generate_zone_trend_figure(df, date_agg, xasisname):
     figure = px.bar(df, x=date_agg, y='orphan_count', color='zone', 
-                            barmode='group', orientation='v', category_orders={'month_yr':cat_order},
+                            barmode='group', orientation='v', category_orders={'month_year':cat_order},
                             template= {'layout':{'paper_bgcolor':'#ffffe6', 'plot_bgcolor':'#aebfd0',
                                                 'xaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1,},
                                                 'yaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1,}
                                                 }},
-                            labels={'scanned_date' if xasisname=='Scanned Date' else ('weeknum' if xasisname=='Week' else 'month_yr'):xasisname,
+                            labels={'scanned_date' if xasisname=='Scanned Date' else ('weeknum' if xasisname=='Week' else 'month_year'):xasisname,
                                     'orphan_count': 'Exceptions Generated'},
                                     title="MoM Zone wise Exception generation")
     return figure
@@ -307,7 +307,7 @@ def func_generate_zone_hub_bubble_fig(df, date_agg, xasisname):
                                                             'yaxis': {'gridcolor':'white','showgrid':True, 'gridwidth':1, 'fixedrange':True},
                                                                 }},
                  title="Zone-Hub wise MoM Exceptions",
-                 labels={'scanned_date' if xasisname=='Scanned Date' else ('weeknum' if xasisname=='Week' else 'month_yr'):xasisname,
+                 labels={'scanned_date' if xasisname=='Scanned Date' else ('weeknum' if xasisname=='Week' else 'month_year'):xasisname,
                         "orphan_count":"Exceptions Generated",
                         "hub_name":'Hubs'} # customize label,
                 

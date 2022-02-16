@@ -89,8 +89,11 @@ def create_rewrite_raw_files(df, date_column, csv_files, save_location):
     filenames = []
     for scanned_date in unique_dates:
         # print(scanned_date)
-        scanned_date = scanned_date.strftime("%Y-%m-%d")
-        temp = df[df[date_column]==datetime.strptime(scanned_date,'%Y-%m-%d').date()]
+        if date_column=='month':
+            temp = df[df[date_column]==scanned_date]
+        else:
+            scanned_date = scanned_date.strftime("%Y-%m-%d")
+            temp = df[df[date_column]==datetime.strptime(scanned_date,'%Y-%m-%d').date()]
         filename = scanned_date + '.csv'
         filenames.append(save_location + filename)
         temp.to_csv(save_location + filename, index=False)
@@ -119,16 +122,26 @@ def coalesce_columns(df, coalesce_column_list, result_column):
     return df
 
 
-def collate_data_for_dashboard(start_date, no_of_days, csv_files, raw_file_location, dataframe_columns):
+def collate_data_for_dashboard(start_date, no_of_days, csv_files, raw_file_location, dataframe_columns, flag):
     df = pd.DataFrame(columns=dataframe_columns) 
     # df = pd.DataFrame() 
-    for i in range(0, no_of_days):
-        start_date = start_date - timedelta(1)
-        # print(start_date)
-        file = start_date.strftime("%Y-%m-%d") + '.csv'
-        
-        if file in csv_files:
+    if flag == 'date':
+        for i in range(0, no_of_days):
+            start_date = start_date - timedelta(1)
+            # print(start_date)
+            file = start_date.strftime("%Y-%m-%d") + '.csv'
+            
+            if file in csv_files:
+                temp = pd.read_csv(raw_file_location + file)
+                temp = temp[dataframe_columns]
+                df = df.append(temp)
+    else:
+        for file in csv_files:
             temp = pd.read_csv(raw_file_location + file)
             temp = temp[dataframe_columns]
             df = df.append(temp)
     return df
+
+def dashboard_data_pivot(df,pivot_indexes,value_calc_column,rename_column_to,aggregation_func):
+    pivot = pd.DataFrame(pd.pivot_table(df, index=pivot_indexes, values=[value_calc_column], aggfunc=aggregation_func)).reset_index().rename(columns={value_calc_column: rename_column_to})
+    return pivot

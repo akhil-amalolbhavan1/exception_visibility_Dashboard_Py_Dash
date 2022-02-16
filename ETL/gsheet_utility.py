@@ -5,11 +5,11 @@ from datetime import datetime
 #from Email_code import * 
 
 
-def get_gsheet_data(gsheetUrl, datasclearcell, ghseetdatalocation, asset):
+def get_gsheet_data(gsheetUrl, datasclearcell, ghseetdatalocation, asset, sheetnumber):
     gc = pygsheets.authorize(service_file='/Users/a/Documents/GitHub/exception_visibility/ETL/Client_Secret.json')
     print(datetime.now().strftime("%m/%d/%Y, %H:%M:%S") + ' Starting Fetching Gsheet Data')
     sh = gc.open_by_url(gsheetUrl)
-    ws = sh[0] #Selecting the sheet
+    ws = sh[sheetnumber] #Selecting the sheet
     gsheetDF = pd.DataFrame(pd.DataFrame(ws.get_all_values(include_tailing_empty=False, include_tailing_empty_rows=False)))
     print(datetime.now().strftime("%m/%d/%Y, %H:%M:%S") + ' Fetching Gsheet Completed')
     print(asset)

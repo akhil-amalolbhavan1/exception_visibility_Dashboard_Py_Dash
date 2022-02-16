@@ -117,6 +117,15 @@ def get_layout(df, rc_df, logisticsdf, hv_df):
                                                         dcc.Graph(id='ageing_rc_bar',
                                             figure = go.Figure(), style={'width':'100%', 'float': 'left'}),
                                         html.Div([
+                                            dcc.RadioItems(id = 'input-radio-button', 
+                                                        options = [dict(label = 'MH Orphans', value = 'MH Orphans'),
+                                                                    dict(label = 'First Mile Orphans', value = 'First Mile Orphans'),
+                                                                    dict(label = 'Last Mile Orphans', value = 'Last Mile Orphans')],
+                                                        value = 'MH Orphans',
+                                                        labelClassName="date-group-labels",
+                                                        # labelCheckedClassName="date-group-labels-checked",
+                                                        inputClassName = "date-group-labels-checked",
+                                                        className="date-group-items"),
                                             dcc.Graph(id='ageing_mh_zone_bar',
                                             figure = go.Figure(), style={'width':'100%', 'float': 'left'}),
                                         ]),html.Div(),
@@ -400,21 +409,22 @@ def update_figures(orphan_start_date, orphan_end_date, date_agg_val):
     # return [overall_trend_count_fig, overall_trend_value_fig, converted_perc_fig,  overal_count_labl, ageing_rc_fig,overal_rc_pend_count_labl, orphan_id_missing_labl, orphan_val_labl, shipment_type_bar_fig, orphan_reason_trend_fig, orphan_area_trend_fig]
 
 @app.callback(Output('ageing_mh_zone_bar', 'figure'),
-               [Input('ageing_rc_bar', 'clickData')],
+               [Input('input-radio-button','value')],
               [State('ageing_rc_bar', 'figure'),
               State('dt_range_orphan','start_date'),
             State('dt_range_orphan','end_date'),])
 def update_zone_ageing(click_data, fig, start_date, end_date):
     trace_name=''
     if (click_data is None)|(click_data == ''):
-        trace_name='Orphan Data'
+        trace_name='MH Orphans'
     else:
-        curve_number = click_data['points'][0]['curveNumber']
-        trace_name = fig['data'][curve_number]['name']
+        # curve_number = click_data['points'][0]['curveNumber']
+        # trace_name = fig['data'][curve_number]['name']
+        trace_name = click_data
     df = pd.DataFrame()
-    if trace_name=='Orphan Data':
+    if trace_name=='MH Orphans':
         df = orphan_df[(orphan_df.scanned_date >=start_date)&(orphan_df.scanned_date<=end_date)].copy()
-    elif trace_name=='Last Mile':
+    elif trace_name=='Last Mile Orphans':
         df = logistics_df[(logistics_df.asset=='Last Mile')&(logistics_df.scanned_date >=start_date)&(logistics_df.scanned_date<=end_date)].copy()
     else:
         df = logistics_df[(logistics_df.asset=='First Mile')&(logistics_df.scanned_date >=start_date)&(logistics_df.scanned_date<=end_date)].copy()
@@ -431,22 +441,23 @@ def update_zone_ageing(click_data, fig, start_date, end_date):
     Output("download-dataframe-csv", "data"),
     Input("btn_csv", "n_clicks"),
     [State('ageing_rc_bar', 'figure'),
+    State('input-radio-button','value'),
     State('dt_range_orphan','start_date'),
     State('dt_range_orphan','end_date'),
     State('ageing_rc_bar', 'clickData')],
     prevent_initial_call=True)
-def func(nclicks, fig, start_date, end_date,click_data):
+def download_data(value, fig, start_date, end_date,click_data):
     trace_name=''
     
-    if click_data is None:
-        trace_name=='Orphan Data'
+    if value is None:
+        trace_name=='MH Orphans'
     else:
-        curve_number = click_data['points'][0]['curveNumber']
-        trace_name = fig['data'][curve_number]['name']
-    
-    if trace_name=='Orphan Data':
+        # curve_number = click_data['points'][0]['curveNumber']
+        # trace_name = fig['data'][curve_number]['name']
+        trace_name = click_data
+    if trace_name=='MH Orphans':
         df = orphan_df[(orphan_df.scanned_date >=start_date)&(orphan_df.scanned_date<=end_date)].copy()
-    elif trace_name=='Last Mile':
+    elif trace_name=='Last Mile Orphans':
         df = logistics_df[(logistics_df.asset=='Last Mile')&(logistics_df.scanned_date >=start_date)&(logistics_df.scanned_date<=end_date)].copy()
     else:
         df = logistics_df[(logistics_df.asset=='First Mile')&(logistics_df.scanned_date >=start_date)&(logistics_df.scanned_date<=end_date)].copy()
@@ -725,17 +736,19 @@ def fun_converted_perc_bar_fig(df, date_agg, tickformat, xasisname):
     #                                             title="Conversion Percentage")
     # print(df)
     # date_agg = 'weeknum_year'
-    print(df[date_agg].unique())
+    # print(df[date_agg].unique())
     fig = go.Figure()
     fig.update_layout({
                 'plot_bgcolor': '#aebfd0',
                 'paper_bgcolor': '#ffffe6','title':"Conversion Percentage",
                 'yaxis':dict(title='orphans conversion %', tickmode = 'array'),
-                'xaxis':dict(title=xasisname),
+                'xaxis':dict(title=xasisname), 'showlegend':False
                 })
-    fig.add_scattergl(x=df[date_agg], y=df.percentage, line={'color': 'red'}, name = 'Below 60%', opacity=0.5, mode='markers+lines+text')
-    fig.add_scattergl(x=df[date_agg], y=df.percentage.where(df.percentage >= 70), line={'color': 'green'}, name = 'Above 70%' , mode='markers+lines+text')
-    fig.add_scattergl(x=df[date_agg], y=df.percentage.where((df.percentage >= 60) & (df.percentage < 70)), line={'color': 'orange'}, name = '60 - 70%', mode='markers+lines+text')
+    fig.add_scattergl(x=df[date_agg], y=df.percentage, line={'color': 'black'}, name = 'Below 60%', opacity=0.5, mode='markers+lines+text')
+    fig.add_scattergl(x=df[date_agg], y=[60 for s in df[date_agg]], line={'color': 'red', 'dash':'dash'}, opacity=0.5)
+    fig.add_scattergl(x=df[date_agg], y=[70 for s in df[date_agg]], line={'color': 'green', 'dash':'dash'}, opacity=0.5)
+    # fig.add_scattergl(x=df[date_agg], y=df.percentage.where(df.percentage >= 70), line={'color': 'green'}, name = 'Above 70%' , mode='markers+lines+text')
+    # fig.add_scattergl(x=df[date_agg], y=df.percentage.where((df.percentage >= 60) & (df.percentage < 70)), line={'color': 'orange'}, name = '60 - 70%', mode='markers+lines+text')
     # fig.add_scattergl(x=df[date_agg], y=df.percentage.where(df.percentage < 60 ), line={'color': 'red'}, name = 'Below 60%')
     return fig
 
