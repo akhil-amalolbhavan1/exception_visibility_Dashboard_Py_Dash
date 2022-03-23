@@ -1,6 +1,8 @@
 # Owner : Akhil A
 # Version V1
 # Created on :
+from glob import glob
+from time import strftime
 from dash_html_components.Center import Center
 from dash_html_components.Div import Div
 from numpy.core.fromnumeric import trace
@@ -38,7 +40,7 @@ def get_layout(pv, spf):
     pvdf = pv
     spfdf = spf
     layout = html.Div([
-                        html.H1('Orphan Dashboard', style={'textAlign':'center', 'width':'100%', 'display':'inline-block'}),
+                        html.H1('SPF & PV Dashboard', style={'textAlign':'center', 'width':'100%', 'display':'inline-block'}),
                                         html.Br(),html.Br(),
                                         html.Div([
                             html.Label(['Choose the date range'], style={'color':'black','width':'200px','textAlign':'left','float':'left','align':'center','display':'inline-block','line-height': '50px','vertical-align': 'middle'}),
@@ -51,6 +53,7 @@ def get_layout(pv, spf):
                                             start_date= datetime.today()-timedelta(days=60),
                                             # end_date=datesdf.weekday.max()-timedelta(days=1)
                                             end_date = datetime.today(),
+                                            display_format = 'MMM-YYYY',
                                             style={'width':'300px','float':'left'}
                                         ),
                                     html.Label(['Choose the x axis for date'], style={'color':'black','width':'200px','textAlign':'left','float':'left','line-height': '50px','vertical-align': 'middle'}),
@@ -60,6 +63,7 @@ def get_layout(pv, spf):
                                                         style={'float':'left','width':'200px', 'line-height': '50px','vertical-align': 'middle'}
                                                 )
                                          ],  style={'align':'center'}),
+                                         html.Div(style={'float':'clear'}), html.Br(),html.Br(),
                         html.Div([
                             dash_table.DataTable(
                                                 id='spf_pv_trend_table',
@@ -91,7 +95,76 @@ def get_layout(pv, spf):
                                                                 'color':'white'
                                                             },
                                                 style_data={ 'border-color': '#034f84' }
-                                                )]),
+                                                )]),html.Br(),html.Br(),
+                                    html.Div([
+                                        html.Div([
+                                            html.H3('SPF Hub wise'),
+                                            dash_table.DataTable(
+                                                                id='spf_hub_table',
+                                                                columns = [],
+                                                                data = [],
+                                                                # filter_action = 'native',
+                                                                sort_action ='native',
+                                                                # export_format = 'csv',
+                                                                # export_columns='visible',
+                                                                export_headers = 'names',
+                                                                # columns=[{"name": i, "id": i} for i in q2_dc_cross_tab.columns],
+                                                                # data=q2_dc_cross_tab.to_dict('records'),
+                                                                page_size=15,
+                                                                style_data_conditional=[
+                                                                                        {
+                                                                                            'if': {'row_index': 'odd'},
+                                                                                            'backgroundColor': '#e3e6e8',
+                                                                                            'color':'black'
+                                                                                        },
+                                                                                        {
+                                                                                            'if': {'row_index': 'even'},
+                                                                                            'backgroundColor': '#d9d9d9',
+                                                                                            'color':'black'
+                                                                                        }
+                                                                                    ],
+                                                                style_header={
+                                                                                'backgroundColor': '#034f84',
+                                                                                # 'fontWeight': 'bold',
+                                                                                'color':'white'
+                                                                            },
+                                                                style_data={ 'border-color': '#034f84' }
+                                                )], style={'width':'45%','float':'left'}),
+                                                html.Div(style={'width':'10%', 'float':'left', 'height':'100px'}),
+                                        html.Div([
+                                            html.H3('PV Hub wise'),
+                                            dash_table.DataTable(
+                                                                id='pv_hub_table',
+                                                                columns = [],
+                                                                data = [],
+                                                                # filter_action = 'native',
+                                                                sort_action ='native',
+                                                                # export_format = 'csv',
+                                                                # export_columns='visible',
+                                                                export_headers = 'names',
+                                                                # columns=[{"name": i, "id": i} for i in q2_dc_cross_tab.columns],
+                                                                # data=q2_dc_cross_tab.to_dict('records'),
+                                                                page_size=15,
+                                                                style_data_conditional=[
+                                                                                        {
+                                                                                            'if': {'row_index': 'odd'},
+                                                                                            'backgroundColor': '#e3e6e8',
+                                                                                            'color':'black'
+                                                                                        },
+                                                                                        {
+                                                                                            'if': {'row_index': 'even'},
+                                                                                            'backgroundColor': '#d9d9d9',
+                                                                                            'color':'black'
+                                                                                        }
+                                                                                    ],
+                                                                style_header={
+                                                                                'backgroundColor': '#034f84',
+                                                                                # 'fontWeight': 'bold',
+                                                                                'color':'white'
+                                                                            },
+                                                                style_data={ 'border-color': '#034f84' }
+                                                )], style={'width':'45%', 'float':'left'}),
+                                     ])
                         
     ])
     return layout
@@ -99,17 +172,45 @@ def get_layout(pv, spf):
 @app.callback([
                 Output('spf_pv_trend_table','data'),
                 Output('spf_pv_trend_table','columns'),
+                Output('spf_hub_table','data'),
+                Output('spf_hub_table','columns'),
+                Output('pv_hub_table','data'),
+                Output('pv_hub_table','columns'),
                 ],
                 [Input('dt_range_spf_pv','start_date'),
                 Input('dt_range_spf_pv','end_date'),
                 Input('dd_date_agg_spf_pv','value')])
 def update_figures(pv_start_date, pv_end_date, date_agg_val):
-    print(datetime.fromisoformat(pv_start_date))
+    # global pvdf, spfdf
+    # print(type(pv_start_date))
+    # print(pv_start_date[0:10])
+    start_date = datetime.strptime(pv_start_date[0:10], '%Y-%m-%d')
+    # end_date = datetime.strptime(pv_end_date, '%Y-%m-%dT%H:%M:%S.%f')
+    end_date = datetime.strptime(pv_end_date[0:10], '%Y-%m-%d')
+    spfdf.month_year = pd.to_datetime(spfdf.month_year)
+    pvdf.month_year = pd.to_datetime(pvdf.month_year)
+    
+    filter_start_date = str(start_date.year) + '-' + str(start_date.month) + '-' + '01'
+    if end_date.month==2:
+        filter_end_date = str(end_date.year) + '-' + str(end_date.month) + '-' + '28'
+    else:    
+        filter_end_date = str(end_date.year) + '-' + str(end_date.month) + '-' + '31'
+
+    print(filter_start_date)
+    pvdf_temp = pvdf[(pvdf.month_year >= pd.to_datetime(filter_start_date)) & (pvdf.month_year <= pd.to_datetime(filter_end_date)) ]
+    spfdf_temp = spfdf[(spfdf.month_year >= pd.to_datetime(filter_start_date)) & (spfdf.month_year <= pd.to_datetime(filter_end_date)) ]
+    # print(filter_start_date)
+    # dttm = datetime.strptime(pv_start_date, '%Y-%m-%dT%H:%M:%S.%f')
+    
+
+    # print(datetime.fromisoformat(pv_start_date))
     if date_agg_val=='Month Wise':
         date_agg_val = 'month'
-    pv_pivot, spf_pivot = data_table_pivots(spf_df=spfdf, pv_df=pvdf, date_agg=date_agg_val)
-    spf_data, spf_column = func_generate_table(pv_pivot)
-    return spf_data,spf_column
+    spf_pv_pviot, spf_hub_pviot, pv_hub_pviot = data_table_pivots(spf_df=spfdf_temp, pv_df=pvdf_temp, date_agg=date_agg_val)
+    spf_pv_data, spf_pv_column = func_generate_table(spf_pv_pviot)
+    spf_hub_data, spf_hub_column = func_generate_table(spf_hub_pviot)
+    pv_hub_data, pv_hub_column = func_generate_table(pv_hub_pviot)
+    return spf_pv_data, spf_pv_column, spf_hub_data, spf_hub_column, pv_hub_data, pv_hub_column
 
 def data_table_pivots(spf_df, pv_df, date_agg):
     if date_agg == 'weeknum':
@@ -139,53 +240,40 @@ def data_table_pivots(spf_df, pv_df, date_agg):
     # orphan_area_pivot = pd.DataFrame(pd.pivot_table(orpdf, index=['orphan_generated_area'], columns=date_agg, fill_value=0, values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
     # orphan_area_pivot.columns = orphan_area_pivot.columns.droplevel(0)
     # orphan_area_pivot = orphan_area_pivot.rename(columns={'':'MH Area'})
+    # print(spf_df.columns)
+    pv_pivot = pd.DataFrame(pd.pivot_table(pv_df, index=['asset'], columns=date_agg, fill_value=0, values=['count'], aggfunc=sum)).reset_index()
+    pv_pivot = pv_pivot.droplevel(0,axis=1).rename(columns={'':'asset'})
+    table_columns = [x for x in month_year if x in pv_pivot.columns.tolist()]
+    table_columns.insert(0,'asset')
+    pv_pivot = pv_pivot[table_columns].reset_index().drop(columns='index')
+    spf_pivot = pd.DataFrame(pd.pivot_table(spf_df, index=['asset'], columns=date_agg, fill_value=0, values=['count'], aggfunc=sum)).reset_index()
+    # print(spf_pivot)
+    spf_pivot = spf_pivot.droplevel(0,axis=1).rename(columns={'':'asset'})
+    table_columns = [x for x in month_year if x in spf_pivot.columns.tolist()]
+    table_columns.insert(0,'asset')
+    spf_pivot = spf_pivot[table_columns].reset_index().drop(columns='index')
+    spf_pv_pivot = pv_pivot.append(spf_pivot)
 
-    pv_pivot = pd.DataFrame(pd.pivot_table(pv_df, index=['asset'], columns=date_agg, fill_value=0, values=['shipment_id'], aggfunc=sum)).reset_index().rename(columns={'shipment_id': 'count'})
-    spf_pivot = pd.DataFrame(pd.pivot_table(spf_df, index=['asset'], columns=date_agg, fill_value=0, values=['shipment_id'], aggfunc=sum)).reset_index().rename(columns={'shipment_id': 'count'})
 
+    pv_hub_pviot =  pd.DataFrame(pd.pivot_table(pv_df, index=['motherhub_name'], fill_value=0, values=['count'], aggfunc=sum)).reset_index().sort_values(by='count', ascending=False)
+    spf_hub_pviot =  pd.DataFrame(pd.pivot_table(spf_df, index=['motherhub_name'], fill_value=0, values=['count'], aggfunc=sum)).reset_index().sort_values(by='count', ascending=False)
 
-    # orphan_pivot = pd.DataFrame(pd.pivot_table(orpdf, index='asset', columns=[date_agg], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
-    # hv_pivot = pd.DataFrame(pd.pivot_table(hvdf, index='asset', columns=[date_agg], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
-    # logistics_pivot = pd.DataFrame(pd.pivot_table(logisticsdf, index='asset', columns=[date_agg], values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
-
-    # hvdf = pd.merge(hvdf,mh_identified_area_mapping, on='orphan_identified_area', how='left')
-    # hv_orphan_area_pivot = pd.DataFrame(pd.pivot_table(hvdf, index=['orphan_generated_area'], columns=date_agg, fill_value=0, values=['scanned_timestamp'], aggfunc=len)).reset_index().rename(columns={'scanned_timestamp': 'orphan_count'})
-    # hv_orphan_area_pivot.columns = hv_orphan_area_pivot.columns.droplevel(0)
-    # hv_orphan_area_pivot = orphan_area_pivot.rename(columns={'':'MH Area'})
-
-    # overall_orphans_generated = orphan_pivot.append(logistics_pivot).append(hv_pivot).fillna('0')
-    # overall_orphans_generated.columns = overall_orphans_generated.columns.droplevel(0)
-    # overall_orphans_generated = overall_orphans_generated.rename(columns={'':'asset'})
-    # if date_agg=='month_year':
-    #     table_columns = [x for x in month_year if x in overall_orphans_generated.columns.tolist()]
-    #     table_columns.insert(0,'asset')
-    #     overall_orphans_generated = overall_orphans_generated[table_columns].reset_index().drop(columns='index')
-
-    #     table_columns = [x for x in month_year if x in orphan_area_pivot.columns.tolist()]
-    #     table_columns.insert(0,'MH Area')
-    #     orphan_area_pivot = orphan_area_pivot[table_columns].reset_index().drop(columns='index')
-
-    #     table_columns = [x for x in month_year if x in hv_orphan_area_pivot.columns.tolist()]
-    #     table_columns.insert(0,'MH Area')
-    #     hv_orphan_area_pivot = hv_orphan_area_pivot[table_columns].reset_index().drop(columns='index')
-
-    # elif date_agg=='weeknum_year':
-    #     table_columns = [x for x in weeknum_year if x in overall_orphans_generated.columns.tolist()]
-    #     table_columns.insert(0,'asset')
-    #     overall_orphans_generated = overall_orphans_generated[table_columns].reset_index().drop(columns='index')
-
-    #     table_columns = [x for x in weeknum_year if x in orphan_area_pivot.columns.tolist()]
-    #     table_columns.insert(0,'MH Area')
-    #     orphan_area_pivot = orphan_area_pivot[table_columns].reset_index().drop(columns='index')
-
-    #     table_columns = [x for x in weeknum_year if x in hv_orphan_area_pivot.columns.tolist()]
-    #     table_columns.insert(0,'MH Area')
-    #     hv_orphan_area_pivot = hv_orphan_area_pivot[table_columns].reset_index().drop(columns='index')
-
-    return pv_pivot, spf_pivot
+    return spf_pv_pivot, spf_hub_pviot, pv_hub_pviot
 
 def func_generate_table(df):
+    # print(df)
+    # print(df.columns)
     dc_column = [{"name": str(i), "id": str(i)} for i in df.columns]
     # dc_column = df.columns.to_list()
     dc_data = df.to_dict('records')
     return dc_data, dc_column
+
+# def func_create_date_list(start_date, end_date):
+#     start_date_month = start_date.strftime('%b')
+#     end_date_monnth = end_date.strftime('%b')
+#     start_year = start_date.year()
+#     end_year = end_date.year()
+    
+#     month_lst = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+#     if start_date_month=='Jan'
+#         temp_list1 =month_lst[1:12]

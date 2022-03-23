@@ -7,7 +7,7 @@ from dash_html_components.H1 import H1
 from dash_html_components.P import P
 from dashboard import app
 from dashboard import server
-from apps import rc_dashboard, download_raw_data, orphan_dashboard, spf_pv_dashboard
+from apps import rc_dashboard, download_raw_data, orphan_dashboard, spf_pv_dashboard, audit_dashboard
 import base64
 import os
 import pandas as pd
@@ -48,6 +48,7 @@ sidebar = html.Div(
                 dbc.NavLink("Orphan Dashboard", href="/apps/orphan_dashboard", active="exact"),
                 dbc.NavLink("RC Dashboard", href="/apps/rc_dashboard", active="exact"),
                 dbc.NavLink("SPF & PV", href="/apps/spf_pv", active="exact"),
+                dbc.NavLink("Audit Dashboard", href="/apps/audit_dashboard", active="exact"),
                 dbc.NavLink("Download Data", href="/apps/download_raw_data", active="exact"),
             ],
             vertical=True,
@@ -69,6 +70,9 @@ def layout():
     global hvdf
     global pvdf
     global spfdf
+    global auditdf
+    global historicdf
+    global materialisticattritiondf
     # mhdf = pd.read_csv(os.getcwd() +'/Dashboard/data/mh_full_data.csv', low_memory=False)
     basepath = '/Users/a/Documents/GitHub/exception_visibility/'
     rcdf = pd.read_csv(basepath + '/Dashboard/data/rc_full_data.csv', low_memory=False)
@@ -77,6 +81,9 @@ def layout():
     logisticsdf = pd.read_csv(basepath +'/Dashboard/data/logistcs_orphan_full_data.csv', low_memory=False)
     pvdf = pd.read_csv(basepath +'/Dashboard/data/pv_full_data.csv', low_memory=False)
     spfdf = pd.read_csv(basepath +'/Dashboard/data/spf_full_data.csv', low_memory=False)
+    auditdf = pd.read_csv(basepath +'/Dashboard/data/audit_full_data.csv', low_memory=False)
+    historicdf = pd.read_csv(basepath +'/Dashboard/data/historicmetric_full_data.csv', low_memory=False)
+    materialisticattritiondf = pd.read_csv(basepath +'/Dashboard/data/materialistic_attrition_full_data.csv', low_memory=False)
     # print(mhdf.scanned_date.count())
     return html.Div([
             dcc.Location(id="url"),
@@ -97,9 +104,11 @@ def display_page(pathname):
     # elif pathname == '/apps/mh_dashboard':
     #     return  mh_dashboard.get_layout(mhdf)
     elif pathname == '/apps/orphan_dashboard':
-        return  orphan_dashboard.get_layout(orphandf,rcdf,logisticsdf, hvdf)
+        return  orphan_dashboard.get_layout(orphandf,rcdf,logisticsdf, hvdf, historicdf, materialisticattritiondf)
     elif pathname == '/apps/spf_pv':
         return  spf_pv_dashboard.get_layout(pvdf, spfdf)
+    elif pathname == '/apps/audit_dashboard':
+        return  audit_dashboard.get_layout(auditdf)
     elif pathname == '/apps/download_raw_data':
         return  download_raw_data.layout
     elif pathname == '/':

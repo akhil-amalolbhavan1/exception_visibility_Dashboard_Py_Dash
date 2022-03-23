@@ -52,6 +52,8 @@ if __name__ == '__main__':
     spfsheetdatapath = basePath + 'ETL/gsheet_data/spf_data/' + today + '.csv'
     pvsheetdatapath = basePath + 'ETL/gsheet_data/pv_data/' + today + '.csv'
     auditsheetdatapath = basePath + 'ETL/gsheet_data/audit_data/' + today + '.csv'
+    historicmetricdatapath = basePath + 'ETL/gsheet_data/historic_data/' + today + '.csv'
+    materialhandlingdatapath = basePath + 'ETL/gsheet_data/material_handling_data/' + today + '.csv'
 
     hub_zone_data = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/187u3lIk3GSDiHuUm-ZLno_keTe-jCAu1bqiTon7ExgU/edit?usp=sharing', 'A3', orphangsheetdatapath,'Hubdetails',0)
 
@@ -64,9 +66,11 @@ if __name__ == '__main__':
     run_orphan = 0
     run_high_value = 0
     run_logistics = 0
-    run_pv = 1
-    run_spf = 1
-    run_audit = 1
+    run_pv = 0
+    run_spf = 0
+    run_audit = 0
+    run_historic_metric = 1
+    run_material_handling = 1
     #######################################################################################################################################################################
     ###############################################################Starting with RC Exception ####Data Capturing###########################################################
     #######################################################################################################################################################################
@@ -422,6 +426,8 @@ if __name__ == '__main__':
             pv_final_columns = ['sl_no','month','scanned_timestamp','shipment_id','motherhub_name','reason', 'is_tracking_id_available', 'zone','asset']
             created_raw_files = data_processing.fetch_created_files(pv_raw_data_location)
             pv_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, pv_raw_data_location, pv_final_columns,'month')
+            pv_dashboard_data = data_processing.dashboard_data_pivot(pv_dashboard_data, pivot_indexes=['month','motherhub_name','is_tracking_id_available','zone','asset'], value_calc_column = 'shipment_id', rename_column_to = 'count', aggregation_func = len)
+            pv_dashboard_data['month_year'] = pd.to_datetime(pv_dashboard_data.month, format = '%b-%Y')
             pv_dashboard_data.to_csv(basePath + 'Dashboard/data/pv_full_data.csv', index=False)
         except Exception as ex:
                 error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
@@ -482,6 +488,7 @@ if __name__ == '__main__':
             created_raw_files = data_processing.fetch_created_files(spf_raw_data_location)
             spf_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, spf_raw_data_location, spf_final_columns,'month')
             spf_dashboard_data = data_processing.dashboard_data_pivot(spf_dashboard_data, pivot_indexes=['month','motherhub_name','is_tracking_id_available','zone','asset'], value_calc_column = 'shipment_id', rename_column_to = 'count', aggregation_func = len)
+            spf_dashboard_data['month_year'] = pd.to_datetime(spf_dashboard_data.month, format = '%b-%Y')
             spf_dashboard_data.to_csv(basePath + 'Dashboard/data/spf_full_data.csv', index=False)
         except Exception as ex:
                 error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
@@ -561,7 +568,7 @@ if __name__ == '__main__':
                                 'is_tracking_id_available' ]
             created_raw_files = data_processing.fetch_created_files(audit_raw_data_location)
             audit_dashboard_data = data_processing.collate_data_for_dashboard(datetime.now().date(), 180, created_raw_files, audit_raw_data_location, audit_final_columns,'date')
-            audit_dashboard_data = data_processing.dashboard_data_pivot(audit_dashboard_data, pivot_indexes=['scanned_date','month', 'year', 'motherhub_name', 'zone', 'is_tracking_id_available', 'asset','result'], value_calc_column = 'shipment_id', rename_column_to = 'count', aggregation_func = len)
+            audit_dashboard_data = data_processing.dashboard_data_pivot(audit_dashboard_data, pivot_indexes=['scanned_date','month', 'year', 'weeknum','motherhub_name', 'zone', 'is_tracking_id_available', 'asset','colour', 'image', 'brand', 'size', 'mrp','result'], value_calc_column = 'shipment_id', rename_column_to = 'count', aggregation_func = len)
             audit_dashboard_data.to_csv(basePath + 'Dashboard/data/audit_full_data.csv', index=False)
         except Exception as ex:
                 error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
@@ -570,7 +577,51 @@ if __name__ == '__main__':
             html_message = html_message + "<h2>Error Occured - Data Ingestion Failed for audit data <p> Error Message : " + error_message + '</h2><br>'
         else:
             html_message = html_message + "Data Ingestion Successfull for Audit Data form completed at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+#######################################################################################################################################################################
+########################################################Starting with historic metric Data Capturing###################################################################
+#######################################################################################################################################################################   
+    error_message = ''
+    if run_historic_metric == 1:
+        html_message = html_message + "<h2>Data Ingestion Summary for Audit Data Form </h2>"
+        try:
+            html_message = html_message + "Data Ingestion Job for historic metric data form started at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting historic metric data process')
+            html_message = html_message + "Starting to fetch historic metric data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
             
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting historic metric data process')
+            historicmetric = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1jsroohFh1uoPqw-6jCcDztEUYAgukZGwFP0YeKgvhH0/edit?usp=sharing', 'A2', historicmetricdatapath,'Audit',4)
+            historicmetric.to_csv(basePath + 'Dashboard/data/historicmetric_full_data.csv', index=False)
+        except Exception as ex:
+                error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
+                print(error_message)
+        if len(error_message)>0:
+            html_message = html_message + "<h2>Error Occured - Data Ingestion Failed for historic metric data <p> Error Message : " + error_message + '</h2><br>'
+        else:
+            html_message = html_message + "Data Ingestion Successfull for historic metric Data form completed at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+
+#######################################################################################################################################################################
+########################################Starting with Material Handlind Attribution Data Capturing#####################################################################
+#######################################################################################################################################################################   
+    error_message = ''
+    if run_material_handling == 1:
+        html_message = html_message + "<h2>Data Ingestion Summary for Material Handlind Attribution Data Form </h2>"
+        try:
+            html_message = html_message + "Data Ingestion Job for Material Handlind Attribution data form started at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting Material Handlind Attribution data process')
+            html_message = html_message + "Starting to fetch Material Handlind Attribution data from google sheet : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+            
+            print(datetime.now().strftime("%m/%d/%Y %H:%M:%S") + ' Starting Material Handlind Attribution data process')
+            materialistic_attribute = gsheetUtility.get_gsheet_data('https://docs.google.com/spreadsheets/d/1jsroohFh1uoPqw-6jCcDztEUYAgukZGwFP0YeKgvhH0/edit?usp=sharing', 'A2', materialhandlingdatapath,'Audit',5)
+            materialistic_attribute.to_csv(basePath + 'Dashboard/data/materialistic_attrition_full_data.csv', index=False)
+        except Exception as ex:
+                error_message = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + str(ex.__class__).replace('<','').replace('>','') + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + str(ex).replace('<','').replace('>','')
+                print(error_message)
+        if len(error_message)>0:
+            html_message = html_message + "<h2>Error Occured - Data Ingestion Failed for Material Handlind Attribution data <p> Error Message : " + error_message + '</h2><br>'
+        else:
+            html_message = html_message + "Data Ingestion Successfull for Material Handlind Attribution Data form completed at : " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + '<br>'
+
+
     print('sending email')
     # fkEmail.send_mail(rcSPOCS, emailUserName, emailPassword, "Data Ingestion Successfull for RC Input on " + str(date.today().strftime("%d-%m-%Y")), "Data Ingestion Successfully completed at " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"),filenames)
     fkEmail.send_mail(rcSPOCS, emailUserName, emailPassword, "Data Ingestion summary for :" + datetime.now().strftime("%d/%m/%Y"), html_message)

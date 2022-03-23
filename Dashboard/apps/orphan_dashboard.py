@@ -34,6 +34,8 @@ orphan_df = pd.read_csv(basepath +'/Dashboard/data/orphan_full_data.csv', low_me
 rcdf = pd.read_csv(basepath +'/Dashboard/data/rc_full_data.csv', low_memory=False)
 logistics_df = pd.read_csv(basepath +'/Dashboard/data/logistcs_orphan_full_data.csv', low_memory=False)
 hvdf = pd.read_csv(basepath +'/Dashboard/data/hv_orphan_full_data.csv', low_memory=False)
+historicdf = pd.read_csv(basepath +'/Dashboard/data/historicmetric_full_data.csv', low_memory=False)
+materialisticattritiondf = pd.read_csv(basepath +'/Dashboard/data/materialistic_attrition_full_data.csv', low_memory=False)
 datesdf = pd.read_csv(basepath+'/Dashboard/Data/week_details.csv')
 datesdf.weekday = pd.to_datetime(datesdf.weekday)
 color_code = ['crimson','darkgreen','darkorange','blue','red', 'maroon', 'teal', 'darkblue', 'magenta','yellow','lightgreen']
@@ -49,12 +51,14 @@ df_sorter = pd.DataFrame(data ={ 'month_year': cat_order,
                                 'priority':[1,	2,	3,	4,	5,	6,	7,	8,	9,	10,	11,	12,	13,	14,	15,	16,	17,	18,	19,	20,	21,	22,	23,	24,	25,	26,	27,	28,	29,	30,	31,	32,	33,	34,	35,	36]})
 
 
-def get_layout(df, rc_df, logisticsdf, hv_df):
-    global orphan_df, rcdf, logistics_df, hvdf
+def get_layout(df, rc_df, logisticsdf, hv_df, historic_df, materialisticattrition_df):
+    global orphan_df, rcdf, logistics_df, hvdf, historicdf
     rcdf = rc_df
     orphan_df = df
     hvdf = hv_df
     logistics_df = logisticsdf
+    historicdf = historic_df
+    materialisticattritiondf = materialisticattrition_df
     orphan_df['month_year'] = pd.to_datetime(orphan_df['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+orphan_df["year"].map(str)
     logistics_df['month_year'] = pd.to_datetime(logistics_df['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+logistics_df["year"].map(str)
     hvdf['month_year'] = pd.to_datetime(hvdf['scanned_date']).dt.month_name().str.slice(stop=3)+"-"+hvdf["year"].map(str)
@@ -179,6 +183,71 @@ def get_layout(df, rc_df, logisticsdf, hv_df):
                             html.Div([], style={'float':'none'}),
                         html.Br(),
                         html.Br(),
+                        html.Div([ html.H4(['Historic Metrics']),
+                                    dash_table.DataTable(
+                                                        id='historic_metric_table',
+                                                        columns = [{"name": str(i), "id": str(i)} for i in historicdf.columns],
+                                                        data = historicdf.to_dict('records'),
+                                                        # filter_action = 'native',
+                                                        sort_action ='native',
+                                                        # export_format = 'csv',
+                                                        # export_columns='visible',
+                                                        export_headers = 'names',
+                                                        # columns=[{"name": i, "id": i} for i in q2_dc_cross_tab.columns],
+                                                        # data=q2_dc_cross_tab.to_dict('records'),
+                                                        page_size=20,
+                                                        style_data_conditional=[
+                                                                                {
+                                                                                    'if': {'row_index': 'odd'},
+                                                                                    'backgroundColor': '#e3e6e8',
+                                                                                    'color':'black'
+                                                                                },
+                                                                                {
+                                                                                    'if': {'row_index': 'even'},
+                                                                                    'backgroundColor': '#d9d9d9',
+                                                                                    'color':'black'
+                                                                                }
+                                                                            ],
+                                                        style_header={
+                                                                        'backgroundColor': '#034f84',
+                                                                        # 'fontWeight': 'bold',
+                                                                        'color':'white'
+                                                                    },
+                                                        style_data={ 'border-color': '#034f84' }
+                                                        )], style={'width':'80%', 'float':'left'}),
+                                                        html.Div(style={'width':'2%', 'height':'10px', 'float':'left'}),
+                        html.Div([ html.H4(['Material Handling Attribution']),
+                                    dash_table.DataTable(
+                                                        id='materialistic_attrition_table',
+                                                        columns = [{"name": str(i), "id": str(i)} for i in materialisticattritiondf.columns],
+                                                        data = materialisticattritiondf.to_dict('records'),
+                                                        # filter_action = 'native',
+                                                        sort_action ='native',
+                                                        # export_format = 'csv',
+                                                        # export_columns='visible',
+                                                        export_headers = 'names',
+                                                        # columns=[{"name": i, "id": i} for i in q2_dc_cross_tab.columns],
+                                                        # data=q2_dc_cross_tab.to_dict('records'),
+                                                        page_size=20,
+                                                        style_data_conditional=[
+                                                                                {
+                                                                                    'if': {'row_index': 'odd'},
+                                                                                    'backgroundColor': '#e3e6e8',
+                                                                                    'color':'black'
+                                                                                },
+                                                                                {
+                                                                                    'if': {'row_index': 'even'},
+                                                                                    'backgroundColor': '#d9d9d9',
+                                                                                    'color':'black'
+                                                                                }
+                                                                            ],
+                                                        style_header={
+                                                                        'backgroundColor': '#034f84',
+                                                                        # 'fontWeight': 'bold',
+                                                                        'color':'white'
+                                                                    },
+                                                        style_data={ 'border-color': '#034f84' }
+                                                        )], style={'width':'18%', 'float':'left'}),
                         dbc.Tabs(
                             [
                                 dbc.Tab(
